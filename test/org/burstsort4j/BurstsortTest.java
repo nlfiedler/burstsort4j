@@ -19,6 +19,9 @@
 
 package org.burstsort4j;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,25 +33,33 @@ import static org.junit.Assert.*;
  * @author nfiedler
  */
 public class BurstsortTest {
+    private static List<String> data;
 
     public BurstsortTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
+        try {
+            data = Tests.loadData();
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
     }
 
     @Before
     public void setUp() {
+        Collections.shuffle(data);
     }
 
     @Test
     public void testSort() {
-        String[] strings = new String[] {
-            "bat", "barn", "bark", "by", "byte", "bytes",
-            "wane", "way", "while"
-        };
-        Burstsort.sort(strings);
-        fail("Test not implemented!");
+        // TODO: use all fo the list items instead of just 100
+        List<String> list = data.subList(0, 100);
+        String[] arr = list.toArray(new String[100]);
+        Burstsort.sort(arr);
+        for (int ii = 1; ii < arr.length; ii++) {
+            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
+        }
     }
 }
