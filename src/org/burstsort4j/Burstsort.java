@@ -25,20 +25,28 @@ package org.burstsort4j;
  */
 public class Burstsort {
     private static final short ALPHABET = 256;
-    private static final short THRESHOLD = 8192;
+    private static final char NULLTERM = '\0';
+    private static final short THRESHOLD = 8; //8192;
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
 //    private static final short LEVEL = 7;
     private static final short[] bucket_inc;
 
     static {
         bucket_inc = new short[]{
+//                    (short) 0,
+//                    (short) 16,
+//                    (short) 128,
+//                    (short) 1024,
+//                    (short) 8192,
+//                    (short) 16384,
+//                    (short) 32768
                     (short) 0,
+                    (short) 1,
+                    (short) 2,
+                    (short) 4,
+                    (short) 8,
                     (short) 16,
-                    (short) 128,
-                    (short) 1024,
-                    (short) 8192,
-                    (short) 16384,
-                    (short) 32768
+                    (short) 32
                 };
     }
 
@@ -77,7 +85,7 @@ public class Burstsort {
             // are buckets already created?
             if (curr.counts[c] < 1) {
                 // create bucket
-                if (c == '\0') {
+                if (c == NULLTERM) {
                     // allocate memory for the bucket
                     curr.ptrs[c] = new String[THRESHOLD];
                     // point to the first cell of the bucket
@@ -90,13 +98,12 @@ public class Burstsort {
                     curr.counts[c]++;
                 } else {
                     curr.ptrs[c] = new String[bucket_inc[1]];
-                    String[] arr = (String[]) curr.ptrs[c];
-                    arr[curr.counts[c]++] = strings[i];
+                    ((String[]) curr.ptrs[c])[curr.counts[c]++] = strings[i];
                     curr.levels[c]++;
                 }
             } else {
                 // bucket already created, insert string in bucket
-                if (c == '\0') {
+                if (c == NULLTERM) {
                     // insert the string
                     curr.ptrs[curr.nulltailptr] = strings[i];
                     // point to next cell
@@ -106,7 +113,7 @@ public class Burstsort {
                     // check if the bucket is reaching the threshold
                     if ((curr.counts[c] % THRESHOLDMINUSONE) == 0) {
                         curr.ptrs[curr.nulltailptr] = new String[THRESHOLD];
-                        /* point to the first cell in the new array */
+                        // point to the first cell in the new array
                         curr.nulltailptr = 0;
                     }
                 } else {
@@ -118,14 +125,92 @@ public class Burstsort {
                     // check for null string buckets as they are not to be
                     // incremented check if the number of items in the bucket
                     // is above a threshold.
-                    int currcounts = curr.counts[c];
-                    if (currcounts < THRESHOLD && currcounts > (bucket_inc[curr.levels[c]] - 1)) {
-                        char[] temp = (char[]) curr.ptrs[c];
+                    if (curr.counts[c] < THRESHOLD && curr.counts[c] > (bucket_inc[curr.levels[c]] - 1)) {
+                        String[] temp = (String[]) curr.ptrs[c];
                         curr.ptrs[c] = new String[bucket_inc[++curr.levels[c]]];
                         System.arraycopy(temp, 0, curr.ptrs[c], 0, temp.length);
                     }
                 }
-                // TODO: implement the bucket bursting
+
+                // is bucket size above the THRESHOLD?
+                while (curr.counts[c] >= THRESHOLD && c != NULLTERM) {
+                    // advance depth of character
+                    p++;
+
+                    // allocate memory for new trie node
+                    BurstTrie newt = new BurstTrie();
+                    // burst...
+                    int currcounts = curr.counts[c];
+                    char cc = NULLTERM;
+                    for (int j = 0; j < currcounts; j++) {
+                        // access the next depth character
+                        cc = charAt(((String[]) curr.ptrs[c])[j], p);
+                        // Insert string in bucket in new node, create bucket if necessary
+                        if (newt.counts[cc] < 1) {
+                            // initialize the nullbucketsize, used to keep count
+                            // of the number of times the bucket has been reallocated
+                            // also make the nulltailptr point to the first element in the bucket
+                            if (cc == NULLTERM) {
+                                newt.ptrs[cc] = new String[THRESHOLD];
+                                // point to the first cell of the bucket
+                                newt.nulltailptr = cc;
+                                // insert the string
+                                newt.ptrs[c] = ((String[]) curr.ptrs[c])[j];
+                                // point to next cell
+                                newt.nulltailptr++;
+                                // increment count of items
+                                newt.counts[cc]++;
+                            } else {
+                                newt.ptrs[cc] = new String[bucket_inc[1]];
+                                // insert string into bucket
+                                // increment the item counter for the bucket
+                                // increment the level counter for the bucket
+                                ((String[]) newt.ptrs[cc])[newt.counts[cc]++] =
+                                        ((String[]) curr.ptrs[c])[j];
+                                newt.levels[cc]++;
+                            }
+                        } else {
+                            // insert the string in the buckets
+                            if (cc == NULLTERM) {
+                                // insert the string
+                                newt.ptrs[newt.nulltailptr] = ((String[]) curr.ptrs[c])[j];
+                                // point to next cell
+                                newt.nulltailptr++;
+                                // increment count of items
+                                newt.counts[cc]++;
+                                // check if the bucket is reaching the threshold
+                                if ((newt.counts[cc] % THRESHOLDMINUSONE) == 0) {
+                                    newt.ptrs[newt.nulltailptr] = new String[THRESHOLD];
+                                    // point to the first cell in the new array
+                                    newt.nulltailptr = 0;
+                                }
+                            } else {
+                                // insert string in bucket and increment the item counter
+                                ((String[]) newt.ptrs[cc])[newt.counts[cc]++] =
+                                        ((String[]) curr.ptrs[c])[j];
+                                // Staggered Approach: if the size of the bucket is above
+                                // level x, then realloc and increase the level count
+                                // check for null string buckets as they are not to be
+                                // incremented check if the number of items in the bucket
+                                // is above a threshold.
+                                if (newt.counts[cc] < THRESHOLD &&
+                                        newt.counts[cc] > (bucket_inc[newt.levels[cc]] - 1)) {
+                                    String[] temp = (String[]) newt.ptrs[cc];
+                                    newt.ptrs[cc] = new String[bucket_inc[++newt.levels[cc]]];
+                                    System.arraycopy(temp, 0, newt.ptrs[cc], 0, temp.length);
+                                }
+                            }
+                        }
+                    }
+                    // old pointer points to the new trie node
+                    curr.ptrs[c] = newt;
+                    // flag to indicate pointer to trie node and not bucket
+                    curr.counts[c] = -1;
+                    // used to burst recursive, so point curr to new
+                    curr = newt;
+                    // point to character used in previous string
+                    c = cc;
+                }
             }
         }
     }
