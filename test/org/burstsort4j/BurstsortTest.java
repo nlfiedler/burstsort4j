@@ -54,9 +54,7 @@ public class BurstsortTest {
 
     @Test
     public void testSort() {
-        // TODO: use all fo the list items instead of just 100
-        List<String> list = data.subList(0, 100);
-        String[] arr = list.toArray(new String[100]);
+        String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
         for (int ii = 1; ii < arr.length; ii++) {
             assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);

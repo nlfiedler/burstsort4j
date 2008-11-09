@@ -26,27 +26,19 @@ package org.burstsort4j;
 public class Burstsort {
     private static final short ALPHABET = 256;
     private static final char NULLTERM = '\0';
-    private static final short THRESHOLD = 8; //8192;
+    private static final short THRESHOLD = 8192;
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
-//    private static final short LEVEL = 7;
     private static final short[] bucket_inc;
 
     static {
         bucket_inc = new short[]{
-//                    (short) 0,
-//                    (short) 16,
-//                    (short) 128,
-//                    (short) 1024,
-//                    (short) 8192,
-//                    (short) 16384,
-//                    (short) 32768
                     (short) 0,
-                    (short) 1,
-                    (short) 2,
-                    (short) 4,
-                    (short) 8,
                     (short) 16,
-                    (short) 32
+                    (short) 128,
+                    (short) 1024,
+                    (short) 8192,
+                    (short) 16384,
+                    (short) 32768
                 };
     }
 
@@ -119,7 +111,7 @@ public class Burstsort {
                 } else {
                     // insert string in bucket and increment the item counter
                     String[] arr = (String[]) curr.ptrs[c];
-                    arr[curr.counts[c]++] = strings[i];
+                    arr[curr.counts[c]++] = strings[i]; // XXX: AIOOBE here
                     // Staggered Approach: if the size of the bucket is above
                     // level x, then realloc and increase the level count
                     // check for null string buckets as they are not to be
