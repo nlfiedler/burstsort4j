@@ -24,23 +24,24 @@ package org.burstsort4j;
  * @author nfiedler
  */
 public class Burstsort {
+    /** Size of the alphabet that is supported. */
     private static final short ALPHABET = 256;
+    /** Null terminator character. */
     private static final char NULLTERM = '\0';
+    /** Size of buckets. */
     private static final short THRESHOLD = 8192;
+    /** Used to store reference to next bucket in last cell of bucket. */
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
-    private static final short[] bucket_inc;
-
-    static {
-        bucket_inc = new short[]{
-                    (short) 0,
-                    (short) 16,
-                    (short) 128,
-                    (short) 1024,
-                    (short) 8192,
-                    (short) 16384,
-                    (short) 32768
-                };
-    }
+    /** Constants for growing the buckets. */
+    private static final short[] bucket_inc = new short[] {
+        (short) 0,
+        (short) 16,
+        (short) 128,
+        (short) 1024,
+        (short) 8192,
+        (short) 16384,
+        (short) 32768
+    };
 
     /**
      * Retrieve the character in String s at offset d. If d is greater
@@ -52,7 +53,7 @@ public class Burstsort {
      * @return  character in s at d, or zero.
      */
     private static final char charAt(CharSequence s, int d) {
-        return d < s.length() ? s.charAt(d) : 0;
+        return d < s.length() ? s.charAt(d) : NULLTERM;
     }
 
     /**
@@ -79,13 +80,14 @@ public class Burstsort {
                 // create bucket
                 if (c == NULLTERM) {
                     // allocate memory for the bucket
-                    curr.ptrs[c] = new String[THRESHOLD];
+                    curr.nulltailptr = new Object[THRESHOLD];
+                    curr.ptrs[c] = curr.nulltailptr;
                     // point to the first cell of the bucket
-                    curr.nulltailptr = c;
+                    curr.nulltailidx = 0;
                     // insert the string
-                    curr.ptrs[c] = strings[i];
+                    curr.nulltailptr[curr.nulltailidx] = strings[i];
                     // point to next cell
-                    curr.nulltailptr++;
+                    curr.nulltailidx++;
                     // increment count of items
                     curr.counts[c]++;
                 } else {
@@ -97,21 +99,24 @@ public class Burstsort {
                 // bucket already created, insert string in bucket
                 if (c == NULLTERM) {
                     // insert the string
-                    curr.ptrs[curr.nulltailptr] = strings[i];
+                    curr.nulltailptr[curr.nulltailidx] = strings[i];
                     // point to next cell
-                    curr.nulltailptr++;
+                    curr.nulltailidx++;
                     // increment count of items
                     curr.counts[c]++;
                     // check if the bucket is reaching the threshold
-                    if ((curr.counts[c] % THRESHOLDMINUSONE) == 0) {
-                        curr.ptrs[curr.nulltailptr] = new String[THRESHOLD];
+                    if (curr.counts[c] % THRESHOLDMINUSONE == 0) {
+                        // Grow the null bucket by daisy chaining a new array.
+                        Object[] tmp = new Object[THRESHOLD];
+                        curr.nulltailptr[curr.nulltailidx] = tmp;
+                        curr.nulltailptr = tmp;
                         // point to the first cell in the new array
-                        curr.nulltailptr = 0;
+                        curr.nulltailidx = 0;
                     }
                 } else {
                     // insert string in bucket and increment the item counter
                     String[] arr = (String[]) curr.ptrs[c];
-                    arr[curr.counts[c]++] = strings[i]; // XXX: AIOOBE here
+                    arr[curr.counts[c]++] = strings[i];
                     // Staggered Approach: if the size of the bucket is above
                     // level x, then realloc and increase the level count
                     // check for null string buckets as they are not to be
@@ -143,13 +148,15 @@ public class Burstsort {
                             // of the number of times the bucket has been reallocated
                             // also make the nulltailptr point to the first element in the bucket
                             if (cc == NULLTERM) {
-                                newt.ptrs[cc] = new String[THRESHOLD];
+                                newt.nulltailptr = new Object[THRESHOLD];
                                 // point to the first cell of the bucket
-                                newt.nulltailptr = cc;
+                                newt.ptrs[cc] = newt.nulltailptr;
+                                newt.nulltailidx = 0;
                                 // insert the string
-                                newt.ptrs[c] = ((String[]) curr.ptrs[c])[j];
+                                newt.nulltailptr[newt.nulltailidx] =
+                                        ((String[]) curr.ptrs[c])[j];
                                 // point to next cell
-                                newt.nulltailptr++;
+                                newt.nulltailidx++;
                                 // increment count of items
                                 newt.counts[cc]++;
                             } else {
@@ -165,16 +172,19 @@ public class Burstsort {
                             // insert the string in the buckets
                             if (cc == NULLTERM) {
                                 // insert the string
-                                newt.ptrs[newt.nulltailptr] = ((String[]) curr.ptrs[c])[j];
+                                newt.nulltailptr[newt.nulltailidx] =
+                                        ((String[]) curr.ptrs[c])[j];
                                 // point to next cell
-                                newt.nulltailptr++;
+                                newt.nulltailidx++;
                                 // increment count of items
                                 newt.counts[cc]++;
                                 // check if the bucket is reaching the threshold
-                                if ((newt.counts[cc] % THRESHOLDMINUSONE) == 0) {
-                                    newt.ptrs[newt.nulltailptr] = new String[THRESHOLD];
+                                if (newt.counts[cc] % THRESHOLDMINUSONE == 0) {
+                                    Object[] tmp = new Object[THRESHOLD];
+                                    newt.nulltailptr[newt.nulltailidx] = tmp;
                                     // point to the first cell in the new array
-                                    newt.nulltailptr = 0;
+                                    newt.nulltailptr = tmp;
+                                    newt.nulltailidx = 0;
                                 }
                             } else {
                                 // insert string in bucket and increment the item counter
@@ -215,7 +225,11 @@ public class Burstsort {
      */
     public static void sort(String[] strings) {
         BurstTrie root = new BurstTrie();
-        insert(root, strings);
+        try {
+            insert(root, strings);
+        } catch (OutOfMemoryError oome) {
+            debug(root, 0);
+        }
         traverse(root, strings, 0, 0);
     }
 
@@ -238,28 +252,29 @@ public class Burstsort {
             } else if (--count != 0) {
                 int off = pos;
                 if (i == 0) {
+                    // Visit all of the null buckets.
                     int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
-                    int no_elements_in_last_bucket = count % THRESHOLDMINUSONE;
-                    String[] nullbucket = (String[]) node.ptrs[i];
+                    Object[] nullbucket = (Object[]) node.ptrs[i];
                     // traverse all arrays in the bucket
                     for (int k = 1; k <= no_of_buckets; k++) {
                         int no_elements_in_bucket;
                         if (k == no_of_buckets) {
-                            no_elements_in_bucket = no_elements_in_last_bucket;
+                            no_elements_in_bucket = count % THRESHOLDMINUSONE;
                         } else {
                             no_elements_in_bucket = THRESHOLDMINUSONE;
                         }
                         // traverse all elements in each bucket
                         int j = 0;
                         while (j < no_elements_in_bucket) {
-                            strings[off++] = nullbucket[j++];
+                            strings[off++] = (String) nullbucket[j++];
                         }
+                        nullbucket = (Object[]) nullbucket[j];
                     }
                 } else {
-                    int j = 0;
-                    while (j < count) {
+                    // Visit all of the tail string buckets.
+                    for (int j = 0; j < count; j++) {
                         String[] arr = (String[]) node.ptrs[i];
-                        strings[off++] = arr[j++];
+                        strings[off++] = arr[j];
                     }
                     if (count > 1) {
                         if (count < 20) {
@@ -276,11 +291,49 @@ public class Burstsort {
     }
 
     /**
+     * Traverse the trie structure, displaying metrics indicating the
+     * structure of the nodes and buckets.
+     *
+     * @param  node  node within trie structure.
+     * @param  deep  character offset within strings.
+     */
+    private static void debug(BurstTrie node, int deep) {
+// XXX: needs review to ensure this is printing everything we need to see
+        for (int i = 0; i < ALPHABET; i++) {
+            int count = node.counts[i];
+            if (++count == 0) {
+                debug((BurstTrie) node.ptrs[i], deep + 1);
+            } else if (--count != 0) {
+                if (i == 0) {
+                    // Visit all of the null buckets.
+                    int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
+                    Object[] nullbucket = (Object[]) node.ptrs[i];
+                    // traverse all arrays in the bucket
+                    for (int k = 1; k <= no_of_buckets; k++) {
+                        int no_elements_in_bucket;
+                        if (k == no_of_buckets) {
+                            no_elements_in_bucket = count % THRESHOLDMINUSONE;
+                        } else {
+                            no_elements_in_bucket = THRESHOLDMINUSONE;
+                        }
+                        System.out.println("# buckets: " + no_elements_in_bucket);
+                    }
+                } else {
+                    System.out.println("# strings: " + count);
+                }
+            }
+        }
+    }
+
+    /**
      * A node in the burst trie structure.
      */
     private static class BurstTrie {
+        /** Reference to the last null bucket in the chain, starting
+         * from the reference in ptrs[0]. */
+        public Object[] nulltailptr;
         /** last element in null bucket */
-        public int nulltailptr;
+        public int nulltailidx;
         /** level counter of bucket size */
         public int[] levels = new int[ALPHABET];
         /** count of items in bucket */
