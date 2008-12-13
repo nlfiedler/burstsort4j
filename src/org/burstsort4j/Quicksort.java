@@ -56,6 +56,7 @@ public class Quicksort {
      * @param  low   the left-most index of the subarray.
      * @param  high  the right-most index of the subarray.
      */
+    @SuppressWarnings("unchecked")
     private static void quicksort(Comparable[] arr, int low, int high) {
         if (low + 7 > high) {
             // Insertion sort for small partitions.
