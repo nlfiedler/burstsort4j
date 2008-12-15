@@ -36,17 +36,18 @@ public class Tests {
 
     /**
      * Generates a set of <em>n</em> strings in a List consisting of
-     * 64 randomly selected alphanumeric characters (mixed case).
+     * <em>l</em> randomly selected alphanumeric characters (mixed case).
      *
      * @param  n  number of random strings to generate.
+     * @param  l  length of each random string.
      * @return  the list of randomly generated strings.
      */
-    public static List<String> generateData(int n) {
+    public static List<String> generateData(int n, int l) {
         Random r = new Random();
         List<String> list = new ArrayList<String>();
         StringBuilder sb = new StringBuilder();
         for (int ii = 0; ii < n; ii++) {
-            for (int jj = 0; jj < 64; jj++) {
+            for (int jj = 0; jj < l; jj++) {
                 int d = r.nextInt(62);
                 if (d < 10) {
                     sb.append((char) ('0' + d));
