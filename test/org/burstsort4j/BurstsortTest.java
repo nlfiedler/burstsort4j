@@ -57,9 +57,7 @@ public class BurstsortTest {
     public void testDictWords() {
         String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
@@ -67,9 +65,7 @@ public class BurstsortTest {
         Collections.sort(data);
         String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
@@ -78,9 +74,7 @@ public class BurstsortTest {
         Collections.reverse(data);
         String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
@@ -89,10 +83,7 @@ public class BurstsortTest {
         String[] arr = new String[16384];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         Burstsort.sort(arr);
-        assertEquals("abcdefghijklmnopqrstuvwxyz", arr[0]);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].equals(arr[ii]));
-        }
+        assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
     }
 
     @Test
@@ -100,8 +91,6 @@ public class BurstsortTest {
         List<String> rlist = Tests.generateData(32768, 64);
         String[] arr = rlist.toArray(new String[rlist.size()]);
         Burstsort.sort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 }

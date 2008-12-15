@@ -56,19 +56,14 @@ public class QuicksortTest {
     public void testQuicksort() {
         String[] arr = data.toArray(new String[data.size()]);
         Quicksort.quicksort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Now sort the sorted list: should be fine.
         Quicksort.quicksort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Sort a reverse sorted list
         Collections.reverse(data);
+        arr = data.toArray(new String[data.size()]);
         Quicksort.quicksort(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 }

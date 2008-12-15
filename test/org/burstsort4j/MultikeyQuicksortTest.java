@@ -56,9 +56,7 @@ public class MultikeyQuicksortTest {
     public void testInsertionSort() {
         String[] arr = data.toArray(new String[data.size()]);
         MultikeyQuicksort.insertionsort(arr, 0, arr.length, 0);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
@@ -66,39 +64,29 @@ public class MultikeyQuicksortTest {
         MultikeyQuicksort mq = new MultikeyQuicksort();
         String[] arr = data.toArray(new String[data.size()]);
         mq.multikey1(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Now sort the sorted list: should be fine.
         mq.multikey1(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Sort a reverse sorted list
         Collections.reverse(data);
+        arr = data.toArray(new String[data.size()]);
         mq.multikey1(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
     public void testMultikey2() {
         String[] arr = data.toArray(new String[data.size()]);
         MultikeyQuicksort.multikey2(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Now sort the sorted list: should be fine.
         MultikeyQuicksort.multikey2(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
         // Sort a reverse sorted list
         Collections.reverse(data);
+        arr = data.toArray(new String[data.size()]);
         MultikeyQuicksort.multikey2(arr);
-        for (int ii = 1; ii < arr.length; ii++) {
-            assertTrue(arr[ii - 1].compareTo(arr[ii]) <= 0);
-        }
+        assertTrue(Tests.isSorted(arr));
     }
 }

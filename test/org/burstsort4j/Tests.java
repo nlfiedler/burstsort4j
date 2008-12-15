@@ -81,4 +81,35 @@ public class Tests {
         br.close();
         return list;
     }
+
+    /**
+     * Tests if the given array of strings is a repeating sequence.
+     *
+     * @param  arr  array of strings to test.
+     * @param  s    the expected repeated value.
+     * @return  true if repeating, false otherwise.
+     */
+    public static boolean isRepeated(String[] arr, String s) {
+        for (int ii = 0; ii < arr.length; ii++) {
+            if (!arr[ii].equals(s)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Tests if the given array of strings is in sorted order.
+     *
+     * @param  arr  array of strings to test.
+     * @return  true if sorted, false otherwise.
+     */
+    public static boolean isSorted(String[] arr) {
+        for (int ii = 1; ii < arr.length; ii++) {
+            if (arr[ii - 1].compareTo(arr[ii]) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
