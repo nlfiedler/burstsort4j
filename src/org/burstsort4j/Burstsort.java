@@ -225,11 +225,12 @@ public class Burstsort {
      */
     public static void sort(String[] strings) {
         BurstTrie root = new BurstTrie();
-        try {
-            insert(root, strings);
-        } catch (OutOfMemoryError oome) {
-            debug(root, 0);
-        }
+//        try {
+        insert(root, strings);
+// XXX: enable this when debug() is verified to be working
+//        } catch (OutOfMemoryError oome) {
+//            debug(root, 0);
+//        }
         traverse(root, strings, 0, 0);
     }
 
