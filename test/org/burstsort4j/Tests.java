@@ -64,14 +64,26 @@ public class Tests {
     }
 
     /**
-     * Loads the test data into a list.
+     * Loads the default test data into a list.
      *
      * @return  test data as a list.
      * @throws  java.io.IOException
      *          if a problem occurs.
      */
     public static List<String> loadData() throws IOException {
-        InputStream is = Tests.class.getResourceAsStream("dictwords");
+        return loadData("dictwords");
+    }
+
+    /**
+     * Loads the specified test data into a list of strings.
+     *
+     * @param  file  name of file to be loaded (must be present in classpath).
+     * @return  test data as a list.
+     * @throws  java.io.IOException
+     *          if a problem occurs.
+     */
+    public static List<String> loadData(String file) throws IOException {
+        InputStream is = Tests.class.getResourceAsStream(file);
         List<String> list = new ArrayList<String>();
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);

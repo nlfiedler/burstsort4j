@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -34,47 +32,45 @@ import static org.junit.Assert.*;
  * @author nfiedler
  */
 public class BurstsortTest {
-    private static List<String> data;
 
-    public BurstsortTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    @Test
+    public void testDictWords() {
         try {
-            data = Tests.loadData();
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
     }
 
-    @Before
-    public void setUp() {
-        Collections.shuffle(data);
-    }
-
-    @Test
-    public void testDictWords() {
-        String[] arr = data.toArray(new String[data.size()]);
-        Burstsort.sort(arr);
-        assertTrue(Tests.isSorted(arr));
-    }
-
     @Test
     public void testSorted() {
-        Collections.sort(data);
-        String[] arr = data.toArray(new String[data.size()]);
-        Burstsort.sort(arr);
-        assertTrue(Tests.isSorted(arr));
+        try {
+            List<String> data = Tests.loadData();
+            Collections.sort(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
     }
 
     @Test
     public void testReversed() {
-        Collections.sort(data);
-        Collections.reverse(data);
-        String[] arr = data.toArray(new String[data.size()]);
-        Burstsort.sort(arr);
-        assertTrue(Tests.isSorted(arr));
+        try {
+            List<String> data = Tests.loadData();
+            Collections.sort(data);
+            Collections.reverse(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
     }
 
     @Test
@@ -88,9 +84,24 @@ public class BurstsortTest {
 
     @Test
     public void testRandom() {
-        List<String> rlist = Tests.generateData(32768, 64);
-        String[] arr = rlist.toArray(new String[rlist.size()]);
+        List<String> data = Tests.generateData(131072, 64);
+        Collections.shuffle(data);
+        String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
+    public void testFileList() {
+        try {
+            List<String> data = Tests.loadData("filelist");
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            assertFalse(Tests.isSorted(arr));
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
     }
 }
