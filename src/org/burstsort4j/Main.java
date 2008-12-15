@@ -29,15 +29,18 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Command-line interface to the various sort implementations.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class Main {
+    private static final String BURSTSORT = "--burstsort";
     private static final String MERGESORT = "--mergesort";
     private static final String QUICKSORT = "--quicksort";
     private static final String MULTIKEY = "--multikey";
     private static final String SHUFFLE = "--shuffle";
-    private List<String> input;
+    /** String data to be sorted. */
+    private List<String> data;
 
     public static void main(String[] args) {
         if (args.length < 2 || args.length > 3) {
@@ -65,6 +68,8 @@ public class Main {
 
         if (sort.equals(MERGESORT)) {
             main.mergesort();
+        } else if (sort.equals(BURSTSORT)) {
+            main.burstsort();
         } else if (sort.equals(QUICKSORT)) {
             main.quicksort();
         } else if (sort.equals(MULTIKEY)) {
@@ -85,8 +90,8 @@ public class Main {
     }
 
     private static void printUsage() {
-        System.out.format("Usage: java Main [%s|%s|%s|%s] <input> <output>\n",
-                MERGESORT, QUICKSORT, MULTIKEY, SHUFFLE);
+        System.out.format("Usage: java Main [%s|%s|%s|%s|%s] <input> <output>\n",
+                BURSTSORT, MERGESORT, QUICKSORT, MULTIKEY, SHUFFLE);
         System.out.println("\tWithout a specified sort, default is mergesort.");
         System.out.println("\t--shuffle will in fact randomly shuffle the input file.");
         System.out.println("\t<input> is the name of the (unsorted) input file.");
@@ -96,51 +101,64 @@ public class Main {
 
     private void mergesort() {
         long s1 = System.currentTimeMillis();
-        Collections.sort(input);
+        Collections.sort(data);
         long s2 = System.currentTimeMillis();
         System.out.format("Sort time: %dms\n", s2 - s1);
     }
 
     private void multikey() {
-        String[] arr = input.toArray(new String[input.size()]);
+        String[] arr = data.toArray(new String[data.size()]);
         long s1 = System.currentTimeMillis();
-        MultikeyQuicksort mq = new MultikeyQuicksort();
-        mq.multikey1(arr);
+        // The median-of-three multikey quicksort is typically faster
+        // than the standard version.
+        MultikeyQuicksort.multikey2(arr);
         long s2 = System.currentTimeMillis();
         System.out.format("Sort time: %dms\n", s2 - s1);
-        input.clear();
+        data.clear();
         for (String a : arr) {
-            input.add(a);
+            data.add(a);
+        }
+    }
+
+    private void burstsort() {
+        String[] arr = data.toArray(new String[data.size()]);
+        long s1 = System.currentTimeMillis();
+        Burstsort.sort(arr);
+        long s2 = System.currentTimeMillis();
+        System.out.format("Sort time: %dms\n", s2 - s1);
+        data.clear();
+        for (String a : arr) {
+            data.add(a);
         }
     }
 
     private void quicksort() {
-        String[] arr = input.toArray(new String[input.size()]);
+        String[] arr = data.toArray(new String[data.size()]);
         long s1 = System.currentTimeMillis();
         Quicksort.quicksort(arr);
         long s2 = System.currentTimeMillis();
         System.out.format("Sort time: %dms\n", s2 - s1);
-        input.clear();
+        data.clear();
         for (String a : arr) {
-            input.add(a);
+            data.add(a);
         }
     }
 
     private void shuffle() {
         long s1 = System.currentTimeMillis();
-        Collections.shuffle(input);
+        Collections.shuffle(data);
         long s2 = System.currentTimeMillis();
         System.out.format("Shuffle time: %dms\n", s2 - s1);
     }
 
     private void readFile(String name) {
-        input = new ArrayList<String>();
+        data = new ArrayList<String>();
         try {
             FileReader fr = new FileReader(name);
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null) {
-                input.add(line);
+                data.add(line);
                 line = br.readLine();
             }
             br.close();
@@ -153,7 +171,7 @@ public class Main {
         try {
             FileWriter fw = new FileWriter(name);
             BufferedWriter bw = new BufferedWriter(fw);
-            for (String output : input) {
+            for (String output : data) {
                 bw.write(output);
                 bw.newLine();
             }
