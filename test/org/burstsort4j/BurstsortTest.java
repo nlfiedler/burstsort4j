@@ -90,18 +90,4 @@ public class BurstsortTest {
         Burstsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
-
-    @Test
-    public void testFileList() {
-        try {
-            List<String> data = Tests.loadData("filelist");
-            Collections.shuffle(data);
-            String[] arr = data.toArray(new String[data.size()]);
-            assertFalse(Tests.isSorted(arr));
-            Burstsort.sort(arr);
-            assertTrue(Tests.isSorted(arr));
-        } catch (IOException ioe) {
-            fail(ioe.toString());
-        }
-    }
 }
