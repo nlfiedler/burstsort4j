@@ -22,48 +22,51 @@ package org.burstsort4j;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
  * Unit tests for the Quicksort class.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class QuicksortTest {
-    private static List<String> data;
 
     public QuicksortTest() {
     }
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    @Test
+    public void testQuicksort() {
         try {
-            data = Tests.loadData();
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with non-unique word list.
+            data = Tests.loadData("hamletwords");
+            Collections.shuffle(data);
+            arr = data.toArray(new String[data.size()]);
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            Quicksort.quicksort(arr);
+            assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
-    }
-
-    @Before
-    public void setUp() {
-        Collections.shuffle(data);
-    }
-
-    @Test
-    public void testQuicksort() {
-        String[] arr = data.toArray(new String[data.size()]);
-        Quicksort.quicksort(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Now sort the sorted list: should be fine.
-        Quicksort.quicksort(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Sort a reverse sorted list
-        Collections.reverse(data);
-        arr = data.toArray(new String[data.size()]);
-        Quicksort.quicksort(arr);
-        assertTrue(Tests.isSorted(arr));
     }
 }
