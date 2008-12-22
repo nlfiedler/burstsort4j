@@ -27,7 +27,7 @@ import java.util.Random;
  * their "Fast algorithms for sorting and searching strings" paper
  * published in 1997.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class MultikeyQuicksort {
     /** Random number generator for the randomized quicksort. */
@@ -82,23 +82,28 @@ public class MultikeyQuicksort {
      * @param  depth    the zero-based offset into the strings.
      */
     private void ssort1(String[] strings, int base, int length, int depth) {
-        if (length <= 1) {
+        if (length < 2) {
             return;
         }
         int r = RAND.nextInt(length) + base;
         swap(strings, base, r);
         int v = charAt(strings[base], depth);
+        boolean allzeros = v == 0;
         int le = base + 1, lt = le;
         int gt = base + length - 1, ge = gt;
         while (true) {
             for (; lt <= gt && (r = charAt(strings[lt], depth) - v) <= 0; lt++) {
                 if (r == 0) {
                     swap(strings, le++, lt);
+                } else {
+                    allzeros = false;
                 }
             }
             for (; lt <= gt && (r = charAt(strings[gt], depth) - v) >= 0; gt--) {
                 if (r == 0) {
                     swap(strings, gt, ge--);
+                } else {
+                    allzeros = false;
                 }
             }
             if (lt > gt) {
@@ -112,9 +117,11 @@ public class MultikeyQuicksort {
         vecswap(strings, lt, base + length - r, r);
         r = lt - le;
         ssort1(strings, base, r, depth);
-        // Must perform this call unconditionally since we are dealing
-        // with variable length strings.
-        ssort1(strings, base + r, le + length - ge - 1, depth + 1);
+        if (!allzeros) {
+            // Only descend if there was at least one string that was
+            // of equal or greater length than current depth.
+            ssort1(strings, base + r, le + length - ge - 1, depth + 1);
+        }
         r = ge - gt;
         ssort1(strings, base + length - r, r, depth);
     }
@@ -179,42 +186,6 @@ public class MultikeyQuicksort {
     }
 
     /**
-     * Sort the strings in the array using an insertion sort, but only
-     * consider the characters in the strings starting from the given
-     * offset <em>d</em>. That is, the method will ignore all characters
-     * appearing before the <em>d</em>th character.
-     *
-     * @param  strings  array of strings to sort.
-     * @param  low      low offset into the array (inclusive).
-     * @param  high     high offset into the array (exclusive).
-     * @param  depth    offset of first character in each string to compare.
-     */
-    public static void insertionsort(String[] strings, int low, int high, int depth) {
-        if (strings == null) {
-            throw new IllegalArgumentException("strings must be non-null");
-        }
-        if (low < 0 || high < low || depth < 0) {
-            throw new IllegalArgumentException("indices out of bounds");
-        }
-        for (int i = low + 1; i < high; i++) {
-            for (int j = i; j > low; j--) {
-                int idx = depth;
-                char s = charAt(strings[j - 1], idx);
-                char t = charAt(strings[j], idx);
-                while (s == t && idx < strings[j - 1].length()) {
-                    s = charAt(strings[j - 1], idx);
-                    t = charAt(strings[j], idx);
-                    idx++;
-                }
-                if (s <= t) {
-                    break;
-                }
-                swap(strings, j, j - 1);
-            }
-        }
-    }
-
-    /**
      * The recursive portion of multikey2.
      *
      * @param  strings  the array of strings to sort.
@@ -224,7 +195,7 @@ public class MultikeyQuicksort {
      */
     private static void ssort2(String[] a, int base, int n, int depth) {
         if (n < 8) {
-            insertionsort(a, base, base + n, depth);
+            Insertionsort.sort(a, base, base + n, depth);
             return;
         }
         int pl = base;
@@ -241,17 +212,22 @@ public class MultikeyQuicksort {
         pm = med3(a, pl, pm, pn, depth);
         swap(a, base, pm);
         int v = charAt(a[base], depth);
+        boolean allzeros = v == 0;
         int le = base + 1, lt = le;
         int gt = base + n - 1, ge = gt;
         while (true) {
             for (; lt <= gt && (r = charAt(a[lt], depth) - v) <= 0; lt++) {
                 if (r == 0) {
                     swap(a, le++, lt);
+                } else {
+                    allzeros = false;
                 }
             }
             for (; lt <= gt && (r = charAt(a[gt], depth) - v) >= 0; gt--) {
                 if (r == 0) {
                     swap(a, gt, ge--);
+                } else {
+                    allzeros = false;
                 }
             }
             if (lt > gt) {
@@ -267,9 +243,11 @@ public class MultikeyQuicksort {
         if ((r = lt - le) > 1) {
             ssort2(a, base, r, depth);
         }
-        // Must perform this call unconditionally since we are dealing
-        // with variable length strings.
-        ssort2(a, base + r, le + n - ge - 1, depth + 1);
+        if (!allzeros) {
+            // Only descend if there was at least one string that was
+            // of equal or greater length than current depth.
+            ssort2(a, base + r, le + n - ge - 1, depth + 1);
+        }
         if ((r = ge - gt) > 1) {
             ssort2(a, base + n - r, r, depth);
         }
