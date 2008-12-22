@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for the Burstsort class.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class BurstsortTest {
 
@@ -85,9 +85,21 @@ public class BurstsortTest {
     @Test
     public void testRandom() {
         List<String> data = Tests.generateData(131072, 64);
-        Collections.shuffle(data);
         String[] arr = data.toArray(new String[data.size()]);
         Burstsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
+    public void testHamlet() {
+        try {
+            List<String> data = Tests.loadData("hamletwords");
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
     }
 }

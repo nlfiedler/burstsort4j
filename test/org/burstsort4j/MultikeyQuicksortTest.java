@@ -20,56 +20,63 @@
 package org.burstsort4j;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
  * Unit test for the MultikeyQuicksort implementation.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class MultikeyQuicksortTest {
-    private static List<String> data;
 
     public MultikeyQuicksortTest() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        try {
-            data = Tests.loadData();
-        } catch (IOException ioe) {
-            fail(ioe.toString());
-        }
-    }
-
-    @Before
-    public void setUp() {
-        Collections.shuffle(data);
-    }
-
-    @Test
-    public void testInsertionSort() {
-        String[] arr = data.toArray(new String[data.size()]);
-        MultikeyQuicksort.insertionsort(arr, 0, arr.length, 0);
-        assertTrue(Tests.isSorted(arr));
     }
 
     @Test
     public void testMultikey1() {
         MultikeyQuicksort mq = new MultikeyQuicksort();
-        String[] arr = data.toArray(new String[data.size()]);
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with non-unique word list.
+            data = Tests.loadData("hamletwords");
+            Collections.shuffle(data);
+            arr = data.toArray(new String[data.size()]);
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            mq.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+        // Test with repeated strings.
+        String[] arr = new String[16384];
+        Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         mq.multikey1(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Now sort the sorted list: should be fine.
-        mq.multikey1(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Sort a reverse sorted list
-        Collections.reverse(data);
+        assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
+        // Test with randomly generated strings.
+        List<String> data = Tests.generateData(16384, 64);
         arr = data.toArray(new String[data.size()]);
         mq.multikey1(arr);
         assertTrue(Tests.isSorted(arr));
@@ -77,14 +84,44 @@ public class MultikeyQuicksortTest {
 
     @Test
     public void testMultikey2() {
-        String[] arr = data.toArray(new String[data.size()]);
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with non-unique word list.
+            data = Tests.loadData("hamletwords");
+            Collections.shuffle(data);
+            arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with sorted list
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with reverse sorted list
+            Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+        // Test with repeated strings.
+        String[] arr = new String[16384];
+        Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         MultikeyQuicksort.multikey2(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Now sort the sorted list: should be fine.
-        MultikeyQuicksort.multikey2(arr);
-        assertTrue(Tests.isSorted(arr));
-        // Sort a reverse sorted list
-        Collections.reverse(data);
+        assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
+        // Test with randomly generated strings.
+        List<String> data = Tests.generateData(16384, 64);
         arr = data.toArray(new String[data.size()]);
         MultikeyQuicksort.multikey2(arr);
         assertTrue(Tests.isSorted(arr));

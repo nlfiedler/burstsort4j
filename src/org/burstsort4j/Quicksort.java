@@ -60,15 +60,7 @@ public class Quicksort {
     private static void quicksort(Comparable[] arr, int low, int high) {
         if (low + 7 > high) {
             // Insertion sort for small partitions.
-            for (int i = low + 1; i <= high; i++) {
-                Comparable tmp = arr[i];
-                int j = i;
-                while (j > low && tmp.compareTo(arr[j - 1]) < 0) {
-                    arr[j] = arr[j - 1];
-                    j--;
-                }
-                arr[j] = tmp;
-            }
+            Insertionsort.sort(arr, low, high);
         } else {
             // Choose a partition element
             int middle = (low + high) / 2;
