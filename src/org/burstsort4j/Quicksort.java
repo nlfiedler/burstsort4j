@@ -40,11 +40,11 @@ public class Quicksort {
      *
      * @param  arr  an array of Comparable items to sort.
      */
-    public static void quicksort(Comparable[] arr) {
+    public static void sort(Comparable[] arr) {
         if (arr == null) {
             throw new IllegalArgumentException("arr must be non-null");
         }
-        quicksort(arr, 0, arr.length - 1);
+        sort(arr, 0, arr.length - 1);
     }
 
     /**
@@ -57,7 +57,7 @@ public class Quicksort {
      * @param  high  the right-most index of the subarray.
      */
     @SuppressWarnings("unchecked")
-    private static void quicksort(Comparable[] arr, int low, int high) {
+    private static void sort(Comparable[] arr, int low, int high) {
         if (low + 7 > high) {
             // Insertion sort for small partitions.
             Insertionsort.sort(arr, low, high);
@@ -96,9 +96,9 @@ public class Quicksort {
             // Restore pivot element to its rightful position.
             swap(arr, i, high - 1);
             // Sort low partition recursively.
-            quicksort(arr, low, i - 1);
+            sort(arr, low, i - 1);
             // Sort high partition recursively.
-            quicksort(arr, i + 1, high);
+            sort(arr, i + 1, high);
         }
     }
 

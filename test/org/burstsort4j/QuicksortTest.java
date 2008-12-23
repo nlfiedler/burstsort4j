@@ -41,29 +41,29 @@ public class QuicksortTest {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords");
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Quicksort.quicksort(arr);
+            Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
