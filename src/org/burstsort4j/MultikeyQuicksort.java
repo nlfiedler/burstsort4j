@@ -81,7 +81,7 @@ public class MultikeyQuicksort {
      * @param  length   length of subarray to consider.
      * @param  depth    the zero-based offset into the strings.
      */
-    private void ssort1(String[] strings, int base, int length, int depth) {
+    private static void ssort1(String[] strings, int base, int length, int depth) {
         if (length < 2) {
             return;
         }
@@ -133,7 +133,7 @@ public class MultikeyQuicksort {
      *
      * @param  strings  array of strings to be sorted.
      */
-    public void multikey1(String[] strings) {
+    public static void multikey1(String[] strings) {
         if (strings == null) {
             throw new IllegalArgumentException("strings must be non-null");
         }

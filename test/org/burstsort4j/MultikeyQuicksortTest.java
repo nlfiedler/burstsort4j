@@ -38,34 +38,33 @@ public class MultikeyQuicksortTest {
 
     @Test
     public void testMultikey1() {
-        MultikeyQuicksort mq = new MultikeyQuicksort();
         try {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords");
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            mq.multikey1(arr);
+            MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -73,12 +72,12 @@ public class MultikeyQuicksortTest {
         // Test with repeated strings.
         String[] arr = new String[16384];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        mq.multikey1(arr);
+        MultikeyQuicksort.multikey1(arr);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
         List<String> data = Tests.generateData(16384, 64);
         arr = data.toArray(new String[data.size()]);
-        mq.multikey1(arr);
+        MultikeyQuicksort.multikey1(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
