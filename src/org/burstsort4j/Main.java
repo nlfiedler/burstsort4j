@@ -135,7 +135,7 @@ public class Main {
     private void quicksort() {
         String[] arr = data.toArray(new String[data.size()]);
         long s1 = System.currentTimeMillis();
-        Quicksort.quicksort(arr);
+        Quicksort.sort(arr);
         long s2 = System.currentTimeMillis();
         System.out.format("Sort time: %dms\n", s2 - s1);
         data.clear();
