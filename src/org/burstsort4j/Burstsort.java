@@ -225,12 +225,7 @@ public class Burstsort {
      */
     public static void sort(String[] strings) {
         BurstTrie root = new BurstTrie();
-//        try {
         insert(root, strings);
-// XXX: enable this when debug() is verified to be working
-//        } catch (OutOfMemoryError oome) {
-//            debug(root, 0);
-//        }
         traverse(root, strings, 0, 0);
     }
 
@@ -289,41 +284,6 @@ public class Burstsort {
             }
         }
         return pos;
-    }
-
-    /**
-     * Traverse the trie structure, displaying metrics indicating the
-     * structure of the nodes and buckets.
-     *
-     * @param  node  node within trie structure.
-     * @param  deep  character offset within strings.
-     */
-    private static void debug(BurstTrie node, int deep) {
-// XXX: needs review to ensure this is printing everything we need to see
-        for (int i = 0; i < ALPHABET; i++) {
-            int count = node.counts[i];
-            if (++count == 0) {
-                debug((BurstTrie) node.ptrs[i], deep + 1);
-            } else if (--count != 0) {
-                if (i == 0) {
-                    // Visit all of the null buckets.
-                    int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
-                    Object[] nullbucket = (Object[]) node.ptrs[i];
-                    // traverse all arrays in the bucket
-                    for (int k = 1; k <= no_of_buckets; k++) {
-                        int no_elements_in_bucket;
-                        if (k == no_of_buckets) {
-                            no_elements_in_bucket = count % THRESHOLDMINUSONE;
-                        } else {
-                            no_elements_in_bucket = THRESHOLDMINUSONE;
-                        }
-                        System.out.println("# buckets: " + no_elements_in_bucket);
-                    }
-                } else {
-                    System.out.println("# strings: " + count);
-                }
-            }
-        }
     }
 
     /**
