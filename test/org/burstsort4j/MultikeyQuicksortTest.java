@@ -33,7 +33,28 @@ import static org.junit.Assert.*;
  */
 public class MultikeyQuicksortTest {
 
-    public MultikeyQuicksortTest() {
+
+    @Test
+    public void testArguments() {
+        MultikeyQuicksort.multikey1(null);
+        MultikeyQuicksort.multikey2(null);
+        MultikeyQuicksort.multikey1(new String[0]);
+        MultikeyQuicksort.multikey2(new String[0]);
+        String[] arr = new String[] { "a" };
+        MultikeyQuicksort.multikey1(arr);
+        MultikeyQuicksort.multikey2(arr);
+        arr = new String[] { "b", "a" };
+        MultikeyQuicksort.multikey1(arr);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "b", "a" };
+        MultikeyQuicksort.multikey2(arr);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "c", "b", "a" };
+        MultikeyQuicksort.multikey1(arr);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "c", "b", "a" };
+        MultikeyQuicksort.multikey2(arr);
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test

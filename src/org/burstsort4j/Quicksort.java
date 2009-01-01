@@ -41,10 +41,9 @@ public class Quicksort {
      * @param  arr  an array of Comparable items to sort.
      */
     public static void sort(Comparable[] arr) {
-        if (arr == null) {
-            throw new IllegalArgumentException("arr must be non-null");
+        if (arr != null && arr.length > 1) {
+            sort(arr, 0, arr.length - 1);
         }
-        sort(arr, 0, arr.length - 1);
     }
 
     /**

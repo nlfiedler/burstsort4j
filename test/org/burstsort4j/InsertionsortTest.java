@@ -34,6 +34,20 @@ import static org.junit.Assert.*;
 public class InsertionsortTest {
 
     @Test
+    public void testArguments() {
+        Insertionsort.sort(null, 0, 0);
+        Insertionsort.sort(new String[0], 0, 0);
+        String[] arr = new String[] { "a" };
+        Insertionsort.sort(arr, 0, arr.length - 1);
+        arr = new String[] { "b", "a" };
+        Insertionsort.sort(arr, 0, arr.length - 1);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "c", "b", "a" };
+        Insertionsort.sort(arr, 0, arr.length - 1);
+        assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
     public void testComparable() {
         try {
             List<String> data = Tests.loadData();

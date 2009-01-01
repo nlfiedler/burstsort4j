@@ -32,7 +32,18 @@ import static org.junit.Assert.*;
  */
 public class QuicksortTest {
 
-    public QuicksortTest() {
+    @Test
+    public void testArguments() {
+        Quicksort.sort(null);
+        Quicksort.sort(new String[0]);
+        String[] arr = new String[] { "a" };
+        Quicksort.sort(arr);
+        arr = new String[] { "b", "a" };
+        Quicksort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "c", "b", "a" };
+        Quicksort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
     }
 
     @Test

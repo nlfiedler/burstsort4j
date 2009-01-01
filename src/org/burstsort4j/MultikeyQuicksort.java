@@ -134,10 +134,9 @@ public class MultikeyQuicksort {
      * @param  strings  array of strings to be sorted.
      */
     public static void multikey1(String[] strings) {
-        if (strings == null) {
-            throw new IllegalArgumentException("strings must be non-null");
+        if (strings != null && strings.length > 1) {
+            ssort1(strings, 0, strings.length, 0);
         }
-        ssort1(strings, 0, strings.length, 0);
     }
 
     /**
@@ -263,9 +262,8 @@ public class MultikeyQuicksort {
      * @param  strings  array of strings to be sorted.
      */
     public static void multikey2(String[] strings) {
-        if (strings == null) {
-            throw new IllegalArgumentException("strings must be non-null");
+        if (strings != null && strings.length > 1) {
+            ssort2(strings, 0, strings.length, 0);
         }
-        ssort2(strings, 0, strings.length, 0);
     }
 }

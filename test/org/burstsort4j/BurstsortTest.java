@@ -34,6 +34,20 @@ import static org.junit.Assert.*;
 public class BurstsortTest {
 
     @Test
+    public void testArguments() {
+        Burstsort.sort(null);
+        Burstsort.sort(new String[0]);
+        String[] arr = new String[] { "a" };
+        Burstsort.sort(arr);
+        arr = new String[] { "b", "a" };
+        Burstsort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
+        arr = new String[] { "c", "b", "a" };
+        Burstsort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
     public void testDictWords() {
         try {
             List<String> data = Tests.loadData();

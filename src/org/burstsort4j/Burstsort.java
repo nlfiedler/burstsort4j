@@ -224,9 +224,11 @@ public class Burstsort {
      * @param  strings  array of strings to be sorted.
      */
     public static void sort(String[] strings) {
-        BurstTrie root = new BurstTrie();
-        insert(root, strings);
-        traverse(root, strings, 0, 0);
+        if (strings != null && strings.length > 1) {
+            BurstTrie root = new BurstTrie();
+            insert(root, strings);
+            traverse(root, strings, 0, 0);
+        }
     }
 
     /**
