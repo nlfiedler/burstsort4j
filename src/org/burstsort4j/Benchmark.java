@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * $Id: $
+ * $Id$
  */
 
 package org.burstsort4j;
@@ -25,6 +25,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -38,7 +39,31 @@ public class Benchmark {
     /** Number of times each sort implementation is run for each data set. */
     private static final int RUN_COUNT = 5;
     /** Size of the data sets used in testing sort performance. */
-    public enum DataSize { SMALL, MEDIUM, LARGE };
+    public enum DataSize {
+        SMALL   (100000),
+        MEDIUM (1000000),
+        LARGE  (3000000);
+        /** The quantity for this data size. */
+        private final int value;
+
+        /**
+         * Constructs a DataSize with a particular quantity.
+         *
+         * @param  value  the quantity.
+         */
+        DataSize(int value) {
+            this.value = value;
+        }
+
+        /**
+         * Returns the quantity for this data size.
+         *
+         * @return  quantity.
+         */
+        public int getValue() {
+            return value;
+        }
+    };
 
     /**
      * Command-line interface to benchmark driver.
@@ -78,7 +103,11 @@ public class Benchmark {
             // of the data sizes.
             generators = new DataGenerator[] {
                 new RandomGenerator(),
-                new PsuedoWordGenerator()
+                new PsuedoWordGenerator(),
+                new RepeatGenerator(),
+                new SmallAlphabetGenerator(),
+                new RepeatCycleGenerator(),
+                new GenomeGenerator()
             };
             sizes = DataSize.values();
         }
@@ -221,18 +250,7 @@ public class Benchmark {
 
         @Override
         public List<String> generate(DataSize size) throws GeneratorException {
-            int count = 0;
-            switch (size) {
-                case SMALL:
-                    count = 100000;
-                    break;
-                case MEDIUM:
-                    count = 1000000;
-                    break;
-                case LARGE:
-                    count = 3000000;
-                    break;
-            }
+            int count = size.getValue();
             List<String> data = new ArrayList<String>(count);
             try {
                 FileReader fr = new FileReader(file);
@@ -261,6 +279,51 @@ public class Benchmark {
     }
 
     /**
+     * Generates strings of a fixed length, comprised of randomly selected
+     * characters from the genome alphabet.
+     */
+    private static class GenomeGenerator implements DataGenerator {
+        /** Size of the randomly generated strings. */
+        private static final int LENGTH = 9;
+        /** Size of the genome alphabet (a, c, g, t). */
+        private static final int ALPHABET = 4;
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            int count = size.getValue();
+            Random r = new Random();
+            List<String> list = new ArrayList<String>();
+            StringBuilder sb = new StringBuilder();
+            for (int ii = 0; ii < count; ii++) {
+                for (int jj = 0; jj < LENGTH; jj++) {
+                    switch (r.nextInt(ALPHABET)) {
+                        case 0:
+                            sb.append('a');
+                            break;
+                        case 1:
+                            sb.append('c');
+                            break;
+                        case 2:
+                            sb.append('g');
+                            break;
+                        case 3:
+                            sb.append('t');
+                            break;
+                    }
+                }
+                list.add(sb.toString());
+                sb.setLength(0);
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Genome";
+        }
+    }
+
+    /**
      * Generates a set of psuedo words, comprised of at least one letter,
      * up to the length of the longest (real) English word, using only
      * the lower-case letters.
@@ -273,18 +336,7 @@ public class Benchmark {
 
         @Override
         public List<String> generate(DataSize size) throws GeneratorException {
-            int count = 0;
-            switch (size) {
-                case SMALL:
-                    count = 100000;
-                    break;
-                case MEDIUM:
-                    count = 1000000;
-                    break;
-                case LARGE:
-                    count = 3000000;
-                    break;
-            }
+            int count = size.getValue();
             Random r = new Random();
             List<String> list = new ArrayList<String>();
             StringBuilder sb = new StringBuilder();
@@ -308,41 +360,24 @@ public class Benchmark {
 
     /**
      * Generates strings of a fixed length, comprised of randomly selected
-     * letters (mixed case) and numbers.
+     * characters from the printable ASCII set (from 32 to 126).
      */
     private static class RandomGenerator implements DataGenerator {
         /** Size of the randomly generated strings. */
-        private static final int LENGTH = 64;
-        /** Upper/lowercase letters, digits */
-        private static final int ALPHABET = 62;
+        private static final int LENGTH = 100;
+        /** All printable characters in US-ASCII. */
+        private static final int ALPHABET = 95;
 
         @Override
         public List<String> generate(DataSize size) throws GeneratorException {
-            int count = 0;
-            switch (size) {
-                case SMALL:
-                    count = 100000;
-                    break;
-                case MEDIUM:
-                    count = 1000000;
-                    break;
-                case LARGE:
-                    count = 3000000;
-                    break;
-            }
+            int count = size.getValue();
             Random r = new Random();
             List<String> list = new ArrayList<String>();
             StringBuilder sb = new StringBuilder();
             for (int ii = 0; ii < count; ii++) {
                 for (int jj = 0; jj < LENGTH; jj++) {
                     int d = r.nextInt(ALPHABET);
-                    if (d < 10) {
-                        sb.append((char) ('0' + d));
-                    } else if (d < 36) {
-                        sb.append((char) ('A' + (d - 10)));
-                    } else {
-                        sb.append((char) ('a' + (d - 36)));
-                    }
+                    sb.append((char) (' ' + d));
                 }
                 list.add(sb.toString());
                 sb.setLength(0);
@@ -353,6 +388,91 @@ public class Benchmark {
         @Override
         public String getDisplayName() {
             return "Random";
+        }
+    }
+
+    /**
+     * Generates a set of duplicate strings, comprised of an alphabet
+     * of size one, where each string is 100 characters. One of three
+     * pathological cases created to stress test the sort.
+     */
+    private static class RepeatGenerator implements DataGenerator {
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            int count = size.getValue();
+            List<String> list = Collections.nCopies(count,
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Artificial A";
+        }
+    }
+
+    /**
+     * Generates a set of strings, comprised of an alphabet of size one,
+     * where length increases from one to 100 characters in a cycle.
+     * One of three pathological cases created to stress test the sort.
+     */
+    private static class RepeatCycleGenerator implements DataGenerator {
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            String[] strs = new String[100];
+            String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+            for (int i = 0, l = 1; i < strs.length; i++, l++) {
+                strs[i] = seed.substring(0, l);
+            }
+            List<String> list = new ArrayList<String>();
+            for (int c = size.getValue(), i = 0; c > 0; i++, c--) {
+                list.add(strs[i % strs.length]);
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Artificial C";
+        }
+    }
+
+    /**
+     * Generates a set of strings, comprised of one to 100 characters,
+     * from an alphabet consisting of nine letters. One of three
+     * pathological cases to stress test the sort.
+     */
+    private static class SmallAlphabetGenerator implements DataGenerator {
+        /** Longest string to be created. */
+        private static final int LONGEST = 100;
+        /** Small alphabet size. */
+        private static final int ALPHABET = 9;
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            int count = size.getValue();
+            Random r = new Random();
+            List<String> list = new ArrayList<String>();
+            StringBuilder sb = new StringBuilder();
+            for (int ii = 0; ii < count; ii++) {
+                int length = r.nextInt(LONGEST) + 1;
+                for (int jj = 0; jj < length; jj++) {
+                    int d = r.nextInt(ALPHABET);
+                    sb.append((char) ('a' + d));
+                }
+                list.add(sb.toString());
+                sb.setLength(0);
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Artificial B";
         }
     }
 
