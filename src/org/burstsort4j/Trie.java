@@ -31,7 +31,7 @@ import java.io.PrintStream;
  * that is at least 2,048 bytes. Storing a few thousand words
  * will easily consume more than 50Mb of memory.</p>
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class Trie {
     /** Size of the large alphabet this trie supports. */

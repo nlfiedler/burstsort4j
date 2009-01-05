@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Collection of utility methods to support the unit tests.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class Tests {
 

@@ -21,7 +21,7 @@ package org.burstsort4j;
 /**
  * Implementation of the original Burstsort, (arrays) version.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class Burstsort {
     /** Size of the alphabet that is supported. */

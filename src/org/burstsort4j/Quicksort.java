@@ -28,7 +28,7 @@ package org.burstsort4j;
  * <code>java.util.Arrays</code> class instead, which uses additional
  * heuristics to improve performance.</p>
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class Quicksort {
 

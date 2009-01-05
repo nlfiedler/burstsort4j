@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 /**
  * Test the Trie class.
  *
- * @author nfiedler
+ * @author Nathan Fiedler
  */
 public class TrieTest {
 
