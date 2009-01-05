@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Collection of utility methods to support the unit tests.
@@ -71,7 +72,7 @@ public class Tests {
      *          if a problem occurs.
      */
     public static List<String> loadData() throws IOException {
-        return loadData("dictwords");
+        return loadData("dictwords", false);
     }
 
     /**
@@ -83,7 +84,23 @@ public class Tests {
      *          if a problem occurs.
      */
     public static List<String> loadData(String file) throws IOException {
+        return loadData(file, false);
+    }
+
+    /**
+     * Loads the specified test data into a list of strings.
+     *
+     * @param  file  name of file to be loaded (must be present in classpath).
+     * @param  gzip  if true, stream will be decompressed using gzip.
+     * @return  test data as a list.
+     * @throws  java.io.IOException
+     *          if a problem occurs.
+     */
+    public static List<String> loadData(String file, boolean gzip) throws IOException {
         InputStream is = Tests.class.getResourceAsStream(file);
+        if (gzip) {
+            is = new GZIPInputStream(is);
+        }
         List<String> list = new ArrayList<String>();
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);

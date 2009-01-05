@@ -116,4 +116,16 @@ public class BurstsortTest {
             fail(ioe.toString());
         }
     }
+
+    @Test
+    public void testDictCalls() {
+        try {
+            List<String> data = Tests.loadData("dictcalls.gz", true);
+            String[] arr = data.toArray(new String[data.size()]);
+            Burstsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
 }

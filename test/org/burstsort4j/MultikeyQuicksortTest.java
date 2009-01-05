@@ -87,6 +87,11 @@ public class MultikeyQuicksortTest {
             arr = data.toArray(new String[data.size()]);
             MultikeyQuicksort.multikey1(arr);
             assertTrue(Tests.isSorted(arr));
+            // Test with dict calls data
+            data = Tests.loadData("dictcalls.gz", true);
+            arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey1(arr);
+            assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
@@ -129,6 +134,11 @@ public class MultikeyQuicksortTest {
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
+            arr = data.toArray(new String[data.size()]);
+            MultikeyQuicksort.multikey2(arr);
+            assertTrue(Tests.isSorted(arr));
+            // Test with dict calls data
+            data = Tests.loadData("dictcalls.gz", true);
             arr = data.toArray(new String[data.size()]);
             MultikeyQuicksort.multikey2(arr);
             assertTrue(Tests.isSorted(arr));

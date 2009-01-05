@@ -76,6 +76,11 @@ public class QuicksortTest {
             arr = data.toArray(new String[data.size()]);
             Quicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
+            // Test with dict calls data
+            data = Tests.loadData("dictcalls.gz", true);
+            arr = data.toArray(new String[data.size()]);
+            Quicksort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
