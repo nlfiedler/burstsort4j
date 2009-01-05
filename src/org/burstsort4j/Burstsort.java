@@ -75,134 +75,21 @@ public class Burstsort {
                 p++;
                 c = charAt(strings[i], p);
             }
-            // are buckets already created?
-            if (curr.counts[c] < 1) {
-                // create bucket
-                if (c == NULLTERM) {
-                    // allocate memory for the bucket
-                    curr.nulltailptr = new Object[THRESHOLD];
-                    curr.ptrs[c] = curr.nulltailptr;
-                    // point to the first cell of the bucket
-                    curr.nulltailidx = 0;
-                    // insert the string
-                    curr.nulltailptr[curr.nulltailidx] = strings[i];
-                    // point to next cell
-                    curr.nulltailidx++;
-                    // increment count of items
-                    curr.counts[c]++;
-                } else {
-                    curr.ptrs[c] = new String[bucket_inc[1]];
-                    ((String[]) curr.ptrs[c])[curr.counts[c]++] = strings[i];
-                    curr.levels[c]++;
-                }
-            } else {
-                // bucket already created, insert string in bucket
-                if (c == NULLTERM) {
-                    // insert the string
-                    curr.nulltailptr[curr.nulltailidx] = strings[i];
-                    // point to next cell
-                    curr.nulltailidx++;
-                    // increment count of items
-                    curr.counts[c]++;
-                    // check if the bucket is reaching the threshold
-                    if (curr.counts[c] % THRESHOLDMINUSONE == 0) {
-                        // Grow the null bucket by daisy chaining a new array.
-                        Object[] tmp = new Object[THRESHOLD];
-                        curr.nulltailptr[curr.nulltailidx] = tmp;
-                        curr.nulltailptr = tmp;
-                        // point to the first cell in the new array
-                        curr.nulltailidx = 0;
-                    }
-                } else {
-                    // insert string in bucket and increment the item counter
-                    String[] arr = (String[]) curr.ptrs[c];
-                    arr[curr.counts[c]++] = strings[i];
-                    // Staggered Approach: if the size of the bucket is above
-                    // level x, then realloc and increase the level count
-                    // check for null string buckets as they are not to be
-                    // incremented check if the number of items in the bucket
-                    // is above a threshold.
-                    if (curr.counts[c] < THRESHOLD && curr.counts[c] > (bucket_inc[curr.levels[c]] - 1)) {
-                        String[] temp = (String[]) curr.ptrs[c];
-                        curr.ptrs[c] = new String[bucket_inc[++curr.levels[c]]];
-                        System.arraycopy(temp, 0, curr.ptrs[c], 0, temp.length);
-                    }
-                }
-
+            curr.insert(c, strings[i]);
+            if (curr.counts[c] > 0) {
                 // is bucket size above the THRESHOLD?
                 while (curr.counts[c] >= THRESHOLD && c != NULLTERM) {
                     // advance depth of character
                     p++;
-
                     // allocate memory for new trie node
                     BurstTrie newt = new BurstTrie();
                     // burst...
-                    int currcounts = curr.counts[c];
                     char cc = NULLTERM;
-                    for (int j = 0; j < currcounts; j++) {
+                    String[] ptrs = (String[]) curr.ptrs[c];
+                    for (int j = 0; j < curr.counts[c]; j++) {
                         // access the next depth character
-                        cc = charAt(((String[]) curr.ptrs[c])[j], p);
-                        // Insert string in bucket in new node, create bucket if necessary
-                        if (newt.counts[cc] < 1) {
-                            // initialize the nullbucketsize, used to keep count
-                            // of the number of times the bucket has been reallocated
-                            // also make the nulltailptr point to the first element in the bucket
-                            if (cc == NULLTERM) {
-                                newt.nulltailptr = new Object[THRESHOLD];
-                                // point to the first cell of the bucket
-                                newt.ptrs[cc] = newt.nulltailptr;
-                                newt.nulltailidx = 0;
-                                // insert the string
-                                newt.nulltailptr[newt.nulltailidx] =
-                                        ((String[]) curr.ptrs[c])[j];
-                                // point to next cell
-                                newt.nulltailidx++;
-                                // increment count of items
-                                newt.counts[cc]++;
-                            } else {
-                                newt.ptrs[cc] = new String[bucket_inc[1]];
-                                // insert string into bucket
-                                // increment the item counter for the bucket
-                                // increment the level counter for the bucket
-                                ((String[]) newt.ptrs[cc])[newt.counts[cc]++] =
-                                        ((String[]) curr.ptrs[c])[j];
-                                newt.levels[cc]++;
-                            }
-                        } else {
-                            // insert the string in the buckets
-                            if (cc == NULLTERM) {
-                                // insert the string
-                                newt.nulltailptr[newt.nulltailidx] =
-                                        ((String[]) curr.ptrs[c])[j];
-                                // point to next cell
-                                newt.nulltailidx++;
-                                // increment count of items
-                                newt.counts[cc]++;
-                                // check if the bucket is reaching the threshold
-                                if (newt.counts[cc] % THRESHOLDMINUSONE == 0) {
-                                    Object[] tmp = new Object[THRESHOLD];
-                                    newt.nulltailptr[newt.nulltailidx] = tmp;
-                                    // point to the first cell in the new array
-                                    newt.nulltailptr = tmp;
-                                    newt.nulltailidx = 0;
-                                }
-                            } else {
-                                // insert string in bucket and increment the item counter
-                                ((String[]) newt.ptrs[cc])[newt.counts[cc]++] =
-                                        ((String[]) curr.ptrs[c])[j];
-                                // Staggered Approach: if the size of the bucket is above
-                                // level x, then realloc and increase the level count
-                                // check for null string buckets as they are not to be
-                                // incremented check if the number of items in the bucket
-                                // is above a threshold.
-                                if (newt.counts[cc] < THRESHOLD &&
-                                        newt.counts[cc] > (bucket_inc[newt.levels[cc]] - 1)) {
-                                    String[] temp = (String[]) newt.ptrs[cc];
-                                    newt.ptrs[cc] = new String[bucket_inc[++newt.levels[cc]]];
-                                    System.arraycopy(temp, 0, newt.ptrs[cc], 0, temp.length);
-                                }
-                            }
-                        }
+                        cc = charAt(ptrs[j], p);
+                        newt.insert(cc, ptrs[j]);
                     }
                     // old pointer points to the new trie node
                     curr.ptrs[c] = newt;
@@ -294,14 +181,81 @@ public class Burstsort {
     private static class BurstTrie {
         /** Reference to the last null bucket in the chain, starting
          * from the reference in ptrs[0]. */
-        public Object[] nulltailptr;
+        private Object[] nulltailptr;
         /** last element in null bucket */
-        public int nulltailidx;
+        private int nulltailidx;
         /** level counter of bucket size */
-        public int[] levels = new int[ALPHABET];
+        private int[] levels = new int[ALPHABET];
         /** count of items in bucket */
         public int[] counts = new int[ALPHABET];
         /** pointers to buckets or trie node */
         public Object[] ptrs = new Object[ALPHABET];
+
+        /**
+         * Add the given string into the appropriate bucket, given the
+         * character index into the trie. Presumably the character is
+         * from the string, but not necessarily so. The character may
+         * be the null character, in which case the string is added to
+         * the null bucket. Buckets are expanded as needed to accomodate
+         * the new string.
+         *
+         * @param  c  character used to index trie entry.
+         * @param  s  the string to be inserted.
+         */
+        public void insert(char c, String s) {
+            // are buckets already created?
+            if (counts[c] < 1) {
+                // create bucket
+                if (c == NULLTERM) {
+                    // allocate memory for the bucket
+                    nulltailptr = new Object[THRESHOLD];
+                    ptrs[c] = nulltailptr;
+                    // point to the first cell of the bucket
+                    nulltailidx = 0;
+                    // insert the string
+                    nulltailptr[nulltailidx] = s;
+                    // point to next cell
+                    nulltailidx++;
+                    // increment count of items
+                    counts[c]++;
+                } else {
+                    ptrs[c] = new String[bucket_inc[1]];
+                    ((String[]) ptrs[c])[counts[c]++] = s;
+                    levels[c]++;
+                }
+            } else {
+                // bucket already created, insert string in bucket
+                if (c == NULLTERM) {
+                    // insert the string
+                    nulltailptr[nulltailidx] = s;
+                    // point to next cell
+                    nulltailidx++;
+                    // increment count of items
+                    counts[c]++;
+                    // check if the bucket is reaching the threshold
+                    if (counts[c] % THRESHOLDMINUSONE == 0) {
+                        // Grow the null bucket by daisy chaining a new array.
+                        Object[] tmp = new Object[THRESHOLD];
+                        nulltailptr[nulltailidx] = tmp;
+                        // point to the first cell in the new array
+                        nulltailptr = tmp;
+                        nulltailidx = 0;
+                    }
+                } else {
+                    // insert string in bucket and increment the item counter
+                    ((String[]) ptrs[c])[counts[c]++] = s;
+                    // Staggered Approach: if the size of the bucket is above
+                    // level x, then realloc and increase the level count
+                    // check for null string buckets as they are not to be
+                    // incremented check if the number of items in the bucket
+                    // is above a threshold.
+                    if (counts[c] < THRESHOLD && counts[c] > (bucket_inc[levels[c]] - 1)) {
+                        String[] temp = (String[]) ptrs[c];
+                        ptrs[c] = new String[bucket_inc[++levels[c]]];
+                        System.arraycopy(temp, 0, ptrs[c], 0, temp.length);
+                    }
+                }
+            }
+        }
     }
 }
