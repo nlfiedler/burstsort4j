@@ -76,30 +76,28 @@ public class Burstsort {
                 c = charAt(strings[i], p);
             }
             curr.insert(c, strings[i]);
-            if (curr.counts[c] > 0) {
-                // is bucket size above the THRESHOLD?
-                while (curr.counts[c] >= THRESHOLD && c != NULLTERM) {
-                    // advance depth of character
-                    p++;
-                    // allocate memory for new trie node
-                    BurstTrie newt = new BurstTrie();
-                    // burst...
-                    char cc = NULLTERM;
-                    String[] ptrs = (String[]) curr.ptrs[c];
-                    for (int j = 0; j < curr.counts[c]; j++) {
-                        // access the next depth character
-                        cc = charAt(ptrs[j], p);
-                        newt.insert(cc, ptrs[j]);
-                    }
-                    // old pointer points to the new trie node
-                    curr.ptrs[c] = newt;
-                    // flag to indicate pointer to trie node and not bucket
-                    curr.counts[c] = -1;
-                    // used to burst recursive, so point curr to new
-                    curr = newt;
-                    // point to character used in previous string
-                    c = cc;
+            // is bucket size above the THRESHOLD?
+            while (curr.counts[c] >= THRESHOLD && c != NULLTERM) {
+                // advance depth of character
+                p++;
+                // allocate memory for new trie node
+                BurstTrie newt = new BurstTrie();
+                // burst...
+                char cc = NULLTERM;
+                String[] ptrs = (String[]) curr.ptrs[c];
+                for (int j = 0; j < curr.counts[c]; j++) {
+                    // access the next depth character
+                    cc = charAt(ptrs[j], p);
+                    newt.insert(cc, ptrs[j]);
                 }
+                // old pointer points to the new trie node
+                curr.ptrs[c] = newt;
+                // flag to indicate pointer to trie node and not bucket
+                curr.counts[c] = -1;
+                // used to burst recursive, so point curr to new
+                curr = newt;
+                // point to character used in previous string
+                c = cc;
             }
         }
     }
@@ -186,7 +184,7 @@ public class Burstsort {
         private int nulltailidx;
         /** level counter of bucket size */
         private int[] levels = new int[ALPHABET];
-        /** count of items in bucket */
+        /** count of items in bucket, or -1 if reference to trie node */
         public int[] counts = new int[ALPHABET];
         /** pointers to buckets or trie node */
         public Object[] ptrs = new Object[ALPHABET];
