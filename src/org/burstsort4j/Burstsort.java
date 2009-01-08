@@ -269,14 +269,14 @@ class BurstTrie {
     }
 
     /**
-     * Retrieve the trie node or object array for character <em>c</em>.
+     * Set the trie node or object array for character <em>c</em>.
      *
-     * @param  c  character for which to retrieve entry.
-     * @return  the trie node entry for the given character.
+     * @param  c  character for which to store new entry.
+     * @param  o  the trie node entry for the given character.
      */
-    public void set(char c, Object obj) {
-        ptrs[c] = obj;
-        if (obj instanceof BurstTrie) {
+    public void set(char c, Object o) {
+        ptrs[c] = o;
+        if (o instanceof BurstTrie) {
             // flag to indicate pointer to trie node and not bucket
             counts[c] = -1;
         }
