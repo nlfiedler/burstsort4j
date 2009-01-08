@@ -19,8 +19,6 @@
 
 package org.burstsort4j;
 
-import java.util.Random;
-
 /**
  * A Java implementation of multikey quicksort, translated from the
  * original C implementation by J. Bentley and R. Sedgewick, from
@@ -30,8 +28,6 @@ import java.util.Random;
  * @author Nathan Fiedler
  */
 public class MultikeyQuicksort {
-    /** Random number generator for the randomized quicksort. */
-    private static final Random RAND = new Random();
 
     /**
      * Retrieve the character in String s at offset d. If d is greater
@@ -74,68 +70,16 @@ public class MultikeyQuicksort {
     }
 
     /**
-     * The recursive portion of multikey1.
-     *
-     * @param  strings  the array of strings to sort.
-     * @param  base     zero-based offset into array to be considered.
-     * @param  length   length of subarray to consider.
-     * @param  depth    the zero-based offset into the strings.
-     */
-    private static void ssort1(String[] strings, int base, int length, int depth) {
-        if (length < 2) {
-            return;
-        }
-        int r = RAND.nextInt(length) + base;
-        swap(strings, base, r);
-        int v = charAt(strings[base], depth);
-        boolean allzeros = v == 0;
-        int le = base + 1, lt = le;
-        int gt = base + length - 1, ge = gt;
-        while (true) {
-            for (; lt <= gt && (r = charAt(strings[lt], depth) - v) <= 0; lt++) {
-                if (r == 0) {
-                    swap(strings, le++, lt);
-                } else {
-                    allzeros = false;
-                }
-            }
-            for (; lt <= gt && (r = charAt(strings[gt], depth) - v) >= 0; gt--) {
-                if (r == 0) {
-                    swap(strings, gt, ge--);
-                } else {
-                    allzeros = false;
-                }
-            }
-            if (lt > gt) {
-                break;
-            }
-            swap(strings, lt++, gt--);
-        }
-        r = Math.min(le - base, lt - le);
-        vecswap(strings, base, lt - r, r);
-        r = Math.min(ge - gt, base + length - ge - 1);
-        vecswap(strings, lt, base + length - r, r);
-        r = lt - le;
-        ssort1(strings, base, r, depth);
-        if (!allzeros) {
-            // Only descend if there was at least one string that was
-            // of equal or greater length than current depth.
-            ssort1(strings, base + r, le + length - ge - 1, depth + 1);
-        }
-        r = ge - gt;
-        ssort1(strings, base + length - r, r, depth);
-    }
-
-    /**
      * Sorts the array of strings using a multikey quicksort that chooses
-     * a pivot point at random and does not employ a simpler sort for
-     * small subarrays.
+     * a pivot point using a "median of three" rule (or psuedo median of
+     * nine for arrays over a certain threshold). For very small subarrays,
+     * an insertion sort is used.
      *
      * @param  strings  array of strings to be sorted.
      */
-    public static void multikey1(String[] strings) {
+    public static void sort(String[] strings) {
         if (strings != null && strings.length > 1) {
-            ssort1(strings, 0, strings.length, 0);
+            ssort(strings, 0, strings.length, 0);
         }
     }
 
@@ -146,16 +90,18 @@ public class MultikeyQuicksort {
      * an insertion sort is used.
      * 
      * <p>Only characters in the strings starting from the given offset
-     * <em>d</em> are considered. That is, the method will ignore all
-     * characters appearing before the <em>d</em>th character.</p>
+     * <em>depth</em> are considered. That is, the method will ignore all
+     * characters appearing before the <em>depth</em> character.</p>
      *
      * @param  strings  array of strings to sort.
      * @param  low      low offset into the array (inclusive).
      * @param  high     high offset into the array (exclusive).
      * @param  depth    offset of first character in each string to compare.
      */
-    public static void mkqsort(String[] strings, int low, int high, int depth) {
-        ssort2(strings, low, high - low, depth);
+    public static void sort(String[] strings, int low, int high, int depth) {
+        if (strings != null && strings.length > 1 && low >= 0 && low < high && depth >= 0) {
+            ssort(strings, low, high - low, depth);
+        }
     }
 
     /**
@@ -185,14 +131,14 @@ public class MultikeyQuicksort {
     }
 
     /**
-     * The recursive portion of multikey2.
+     * The recursive portion of multikey quicksort.
      *
      * @param  strings  the array of strings to sort.
      * @param  base     zero-based offset into array to be considered.
      * @param  length   length of subarray to consider.
      * @param  depth    the zero-based offset into the strings.
      */
-    private static void ssort2(String[] a, int base, int n, int depth) {
+    private static void ssort(String[] a, int base, int n, int depth) {
         if (n < 8) {
             Insertionsort.sort(a, base, base + n, depth);
             return;
@@ -240,30 +186,15 @@ public class MultikeyQuicksort {
         r = Math.min(ge - gt, pn - ge - 1);
         vecswap(a, lt, pn - r, r);
         if ((r = lt - le) > 1) {
-            ssort2(a, base, r, depth);
+            ssort(a, base, r, depth);
         }
         if (!allzeros) {
             // Only descend if there was at least one string that was
             // of equal or greater length than current depth.
-            ssort2(a, base + r, le + n - ge - 1, depth + 1);
+            ssort(a, base + r, le + n - ge - 1, depth + 1);
         }
         if ((r = ge - gt) > 1) {
-            ssort2(a, base + n - r, r, depth);
-        }
-    }
-
-
-    /**
-     * Sorts the array of strings using a multikey quicksort that chooses
-     * a pivot point using a "median of three" rule (or psuedo median of
-     * nine for arrays over a certain threshold). For very small subarrays,
-     * an insertion sort is used.
-     *
-     * @param  strings  array of strings to be sorted.
-     */
-    public static void multikey2(String[] strings) {
-        if (strings != null && strings.length > 1) {
-            ssort2(strings, 0, strings.length, 0);
+            ssort(a, base + n - r, r, depth);
         }
     }
 }

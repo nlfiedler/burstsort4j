@@ -149,7 +149,7 @@ public class Burstsort {
                         if (count < 20) {
                             Insertionsort.sort(strings, pos, off, deep + 1);
                         } else {
-                            MultikeyQuicksort.mkqsort(strings, pos, off, deep + 1);
+                            MultikeyQuicksort.sort(strings, pos, off, deep + 1);
                         }
                     }
                 }

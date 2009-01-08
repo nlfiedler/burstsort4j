@@ -111,7 +111,7 @@ public class Main {
         long s1 = System.currentTimeMillis();
         // The median-of-three multikey quicksort is typically faster
         // than the standard version.
-        MultikeyQuicksort.multikey2(arr);
+        MultikeyQuicksort.sort(arr);
         long s2 = System.currentTimeMillis();
         System.out.format("Sort time: %dms\n", s2 - s1);
         data.clear();

@@ -114,8 +114,7 @@ public class Benchmark {
         SortRunner[] runners = new SortRunner[] {
             new MergesortRunner(),
             new QuicksortRunner(),
-            new Multikey1Runner(),
-            new Multikey2Runner(),
+            new MultikeyRunner(),
             new BurstsortRunner(),
         };
         try {
@@ -533,34 +532,18 @@ public class Benchmark {
     }
 
     /**
-     * Runs the less-than-optimal multikey quicksort implementation.
-     */
-    private static class Multikey1Runner implements SortRunner {
-
-        @Override
-        public String getDisplayName() {
-            return "Multikey 1";
-        }
-
-        @Override
-        public void sort(String[] data) {
-            MultikeyQuicksort.multikey1(data);
-        }
-    }
-
-    /**
      * Runs the preferred multikey quicksort implementation.
      */
-    private static class Multikey2Runner implements SortRunner {
+    private static class MultikeyRunner implements SortRunner {
 
         @Override
         public String getDisplayName() {
-            return "Multikey 2";
+            return "Multikey";
         }
 
         @Override
         public void sort(String[] data) {
-            MultikeyQuicksort.multikey2(data);
+            MultikeyQuicksort.sort(data);
         }
     }
 

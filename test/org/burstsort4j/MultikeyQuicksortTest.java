@@ -33,64 +33,54 @@ import static org.junit.Assert.*;
  */
 public class MultikeyQuicksortTest {
 
-
     @Test
     public void testArguments() {
-        MultikeyQuicksort.multikey1(null);
-        MultikeyQuicksort.multikey2(null);
-        MultikeyQuicksort.multikey1(new String[0]);
-        MultikeyQuicksort.multikey2(new String[0]);
+        MultikeyQuicksort.sort(null);
+        MultikeyQuicksort.sort(new String[0]);
         String[] arr = new String[] { "a" };
-        MultikeyQuicksort.multikey1(arr);
-        MultikeyQuicksort.multikey2(arr);
+        MultikeyQuicksort.sort(arr);
         arr = new String[] { "b", "a" };
-        MultikeyQuicksort.multikey1(arr);
-        assertTrue(Tests.isSorted(arr));
-        arr = new String[] { "b", "a" };
-        MultikeyQuicksort.multikey2(arr);
+        MultikeyQuicksort.sort(arr);
         assertTrue(Tests.isSorted(arr));
         arr = new String[] { "c", "b", "a" };
-        MultikeyQuicksort.multikey1(arr);
-        assertTrue(Tests.isSorted(arr));
-        arr = new String[] { "c", "b", "a" };
-        MultikeyQuicksort.multikey2(arr);
+        MultikeyQuicksort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
     @Test
-    public void testMultikey1() {
+    public void testMultikey() {
         try {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords");
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with dict calls data
             data = Tests.loadData("dictcalls.gz", true);
             arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey1(arr);
+            MultikeyQuicksort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -98,62 +88,12 @@ public class MultikeyQuicksortTest {
         // Test with repeated strings.
         String[] arr = new String[16384];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        MultikeyQuicksort.multikey1(arr);
+        MultikeyQuicksort.sort(arr);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
         List<String> data = Tests.generateData(16384, 64);
         arr = data.toArray(new String[data.size()]);
-        MultikeyQuicksort.multikey1(arr);
-        assertTrue(Tests.isSorted(arr));
-    }
-
-    @Test
-    public void testMultikey2() {
-        try {
-            List<String> data = Tests.loadData();
-            Collections.shuffle(data);
-            String[] arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with sorted list
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with reverse sorted list
-            Collections.reverse(data);
-            arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with non-unique word list.
-            data = Tests.loadData("hamletwords");
-            Collections.shuffle(data);
-            arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with sorted list
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with reverse sorted list
-            Collections.reverse(data);
-            arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-            // Test with dict calls data
-            data = Tests.loadData("dictcalls.gz", true);
-            arr = data.toArray(new String[data.size()]);
-            MultikeyQuicksort.multikey2(arr);
-            assertTrue(Tests.isSorted(arr));
-        } catch (IOException ioe) {
-            fail(ioe.toString());
-        }
-        // Test with repeated strings.
-        String[] arr = new String[16384];
-        Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        MultikeyQuicksort.multikey2(arr);
-        assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
-        // Test with randomly generated strings.
-        List<String> data = Tests.generateData(16384, 64);
-        arr = data.toArray(new String[data.size()]);
-        MultikeyQuicksort.multikey2(arr);
+        MultikeyQuicksort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 }
