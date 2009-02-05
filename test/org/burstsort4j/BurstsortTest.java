@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,8 @@ public class BurstsortTest {
     @Test
     public void testDictWords() {
         try {
-            List<String> data = Tests.loadData();
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Burstsort.sort(arr);
