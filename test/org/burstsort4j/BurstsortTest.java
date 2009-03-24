@@ -54,7 +54,8 @@ public class BurstsortTest {
             List<String> data = Tests.loadData("dictwords.gz", true);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Burstsort.sort(arr);
+            System.out.format("\nDictionary words:\n");
+            Burstsort.sort(arr, System.out);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -67,7 +68,8 @@ public class BurstsortTest {
             List<String> data = Tests.loadData();
             Collections.sort(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Burstsort.sort(arr);
+            System.out.format("\nDictionary words (sorted):\n");
+            Burstsort.sort(arr, System.out);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -81,7 +83,8 @@ public class BurstsortTest {
             Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Burstsort.sort(arr);
+            System.out.format("\nDictionary words (reversed):\n");
+            Burstsort.sort(arr, System.out);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -93,7 +96,8 @@ public class BurstsortTest {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[16384];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        Burstsort.sort(arr);
+        System.out.format("\nRepeated alphabet string:\n");
+        Burstsort.sort(arr, System.out);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
     }
 
@@ -101,7 +105,8 @@ public class BurstsortTest {
     public void testRandom() {
         List<String> data = Tests.generateData(131072, 64);
         String[] arr = data.toArray(new String[data.size()]);
-        Burstsort.sort(arr);
+        System.out.format("\nRandom strings:\n");
+        Burstsort.sort(arr, System.out);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -111,7 +116,8 @@ public class BurstsortTest {
             List<String> data = Tests.loadData("hamletwords");
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Burstsort.sort(arr);
+            System.out.format("\nHamlet words:\n");
+            Burstsort.sort(arr, System.out);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -123,7 +129,8 @@ public class BurstsortTest {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);
             String[] arr = data.toArray(new String[data.size()]);
-            Burstsort.sort(arr);
+            System.out.format("\nLibrary calls:\n");
+            Burstsort.sort(arr, System.out);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());

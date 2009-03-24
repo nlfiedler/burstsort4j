@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
  * $Id$
  */
 package org.burstsort4j;
+
+import java.io.PrintStream;
+import java.util.Stack;
 
 /**
  * Implementation of the original Burstsort, (arrays) version.
@@ -95,9 +98,24 @@ public class Burstsort {
      * @param  strings  array of strings to be sorted.
      */
     public static void sort(String[] strings) {
+        sort(strings, null);
+    }
+
+    /**
+     * Sorts the given set of strings using the original burstsort
+     * algorithm. If the given output stream is non-null, then metrics
+     * regarding the burstsort trie structure will be printed there.
+     *
+     * @param  strings  array of strings to be sorted.
+     * @param  out      if non-null, metrics are printed here.
+     */
+    public static void sort(String[] strings, PrintStream out) {
         if (strings != null && strings.length > 1) {
             BurstTrie root = new BurstTrie();
             insert(root, strings);
+            if (out != null) {
+                writeMetrics(root, out);
+            }
             traverse(root, strings, 0, 0);
         }
     }
@@ -157,6 +175,44 @@ public class Burstsort {
             }
         }
         return pos;
+    }
+
+    /**
+     * Collect metrics regarding the burstsort trie structure and write
+     * them to the given output stream.
+     *
+     * @param  node  root node of the trie structure.
+     * @param  out   output stream to write to.
+     */
+    private static void writeMetrics(BurstTrie node, PrintStream out) {
+        Stack<BurstTrie> stack = new Stack<BurstTrie>();
+        stack.push(node);
+        int buckets = 0;
+        int smallest = Integer.MAX_VALUE;
+        int largest = Integer.MIN_VALUE;
+        long sum = 0;
+        while (!stack.isEmpty()) {
+            node = stack.pop();
+            for (char c = 0; c < BurstTrie.ALPHABET; c++) {
+                int count = node.size(c);
+                if (count < 0) {
+                    stack.push((BurstTrie) node.get(c));
+                } else {
+                    buckets++;
+                    sum += count;
+                    if (count < smallest) {
+                        smallest = count;
+                    }
+                    if (count > largest) {
+                        largest = count;
+                    }
+                }
+            }
+        }
+        out.format("Bucket count: %d\n", buckets);
+        out.format("Smallest bucket: %d\n", smallest);
+        out.format("Largest bucket: %d\n", largest);
+        out.format("Average bucket: %d\n", sum / buckets);
     }
 }
 
@@ -286,7 +342,7 @@ class BurstTrie {
      * Returns the number of strings stored for the given character.
      *
      * @param  c  character for which to get count.
-     * @return  number of tail strings.
+     * @return  number of tail strings; -1 if child is a trie node.
      */
     public int size(char c) {
         return counts[c];
