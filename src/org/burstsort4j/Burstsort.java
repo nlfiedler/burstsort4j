@@ -19,7 +19,12 @@
 package org.burstsort4j;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of the original Burstsort, (arrays) version.
@@ -121,6 +126,30 @@ public class Burstsort {
     }
 
     /**
+     * Uses all available processors to sort the trie buckets in parallel,
+     * thus sorting the overal set of strings in less time.
+     *
+     * @param  strings  array of strings to be sorted.
+     * @throws  InterruptedException  if waiting thread was interrupted.
+     */
+    public static void sortParallel(String[] strings) throws InterruptedException {
+        if (strings != null && strings.length > 1) {
+            BurstTrie root = new BurstTrie();
+            insert(root, strings);
+            List<Job> jobs = new ArrayList<Job>();
+            traverseParallel(root, strings, 0, 0, jobs);
+// TODO: replace this with something faster (fork/join, idempotent work stealing, ...)
+            ExecutorService executor = Executors.newFixedThreadPool(
+                    Runtime.getRuntime().availableProcessors());
+            for (Job job : jobs) {
+                executor.submit(job);
+            }
+            executor.shutdown();
+            executor.awaitTermination(1, TimeUnit.DAYS);
+        }
+    }
+
+    /**
      * Traverse the trie structure, ordering the strings in the array to
      * conform to their lexicographically sorted order as determined by
      * the trie structure.
@@ -139,10 +168,11 @@ public class Burstsort {
             } else if (count > 0) {
                 int off = pos;
                 if (c == 0) {
-                    // Visit all of the null buckets.
+                    // Visit all of the null buckets, which are daisy-chained
+                    // together with the last reference in each bucket pointing
+                    // to the next bucket in the chain.
                     int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
                     Object[] nullbucket = (Object[]) node.get(c);
-                    // traverse all arrays in the bucket
                     for (int k = 1; k <= no_of_buckets; k++) {
                         int no_elements_in_bucket;
                         if (k == no_of_buckets) {
@@ -150,7 +180,7 @@ public class Burstsort {
                         } else {
                             no_elements_in_bucket = THRESHOLDMINUSONE;
                         }
-                        // traverse all elements in each bucket
+                        // Copy the string tails to the sorted array.
                         int j = 0;
                         while (j < no_elements_in_bucket) {
                             strings[off++] = (String) nullbucket[j++];
@@ -158,20 +188,67 @@ public class Burstsort {
                         nullbucket = (Object[]) nullbucket[j];
                     }
                 } else {
-                    // Visit all of the tail string buckets.
-                    for (int j = 0; j < count; j++) {
-                        String[] arr = (String[]) node.get(c);
-                        strings[off++] = arr[j];
-                    }
+                    // Sort the tail string bucket.
+                    String[] bucket = (String[]) node.get(c);
                     if (count > 1) {
                         if (count < 20) {
-                            Insertionsort.sort(strings, pos, off, deep + 1);
+                            Insertionsort.sort(bucket, 0, count, deep + 1);
                         } else {
-                            MultikeyQuicksort.sort(strings, pos, off, deep + 1);
+                            MultikeyQuicksort.sort(bucket, 0, count, deep + 1);
                         }
                     }
+                    // Copy to final destination.
+                    System.arraycopy(bucket, 0, strings, off, count);
                 }
-                pos = off;
+                pos += count;
+            }
+        }
+        return pos;
+    }
+
+    /**
+     * Traverse the trie structure, creating jobs for each of the buckets.
+     *
+     * @param  node     node within trie structure.
+     * @param  strings  the strings to be ordered.
+     * @param  pos      position within array.
+     * @param  deep     character offset within strings.
+     * @param  jobs     job list to which new jobs are added.
+     * @return  new pos value.
+     */
+    private static int traverseParallel(BurstTrie node, String[] strings,
+            int pos, int deep, List<Job> jobs) {
+        for (char c = 0; c < BurstTrie.ALPHABET; c++) {
+            int count = node.size(c);
+            if (count < 0) {
+                pos = traverseParallel((BurstTrie) node.get(c), strings, pos,
+                        deep + 1, jobs);
+            } else if (count > 0) {
+                int off = pos;
+                if (c == 0) {
+                    // Visit all of the null buckets, which are daisy-chained
+                    // together with the last reference in each bucket pointing
+                    // to the next bucket in the chain.
+                    int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
+                    Object[] nullbucket = (Object[]) node.get(c);
+                    for (int k = 1; k <= no_of_buckets; k++) {
+                        int no_elements_in_bucket;
+                        if (k == no_of_buckets) {
+                            no_elements_in_bucket = count % THRESHOLDMINUSONE;
+                        } else {
+                            no_elements_in_bucket = THRESHOLDMINUSONE;
+                        }
+                        jobs.add(new Job(nullbucket, no_elements_in_bucket, strings, off));
+                        off += no_elements_in_bucket;
+                        nullbucket = (Object[]) nullbucket[no_elements_in_bucket];
+                    }
+                } else {
+                    // A regular bucket with string tails that need to
+                    // be sorted and copied to the final destination.
+                    String[] bucket = (String[]) node.get(c);
+                    jobs.add(new Job(bucket, count, strings, off, deep + 1));
+                }
+                pos += count;
             }
         }
         return pos;
@@ -188,6 +265,7 @@ public class Burstsort {
         Stack<BurstTrie> stack = new Stack<BurstTrie>();
         stack.push(node);
         int buckets = 0;
+        int nonEmptyBuckets = 0;
         int smallest = Integer.MAX_VALUE;
         int largest = Integer.MIN_VALUE;
         long sum = 0;
@@ -199,9 +277,14 @@ public class Burstsort {
                     stack.push((BurstTrie) node.get(c));
                 } else {
                     buckets++;
-                    sum += count;
-                    if (count < smallest) {
-                        smallest = count;
+                    // Only consider non-empty buckets, as there will
+                    // always be empty buckets.
+                    if (count > 0) {
+                        sum += count;
+                        if (count < smallest) {
+                            smallest = count;
+                        }
+                        nonEmptyBuckets++;
                     }
                     if (count > largest) {
                         largest = count;
@@ -212,7 +295,7 @@ public class Burstsort {
         out.format("Bucket count: %d\n", buckets);
         out.format("Smallest bucket: %d\n", smallest);
         out.format("Largest bucket: %d\n", largest);
-        out.format("Average bucket: %d\n", sum / buckets);
+        out.format("Average bucket: %d\n", sum / nonEmptyBuckets);
     }
 }
 
@@ -225,7 +308,7 @@ class BurstTrie {
     /** Size of the alphabet that is supported. */
     public static final short ALPHABET = 256;
     /** Constants for growing the buckets. */
-    private static final short[] BUCKET_LEVELS = new short[] {
+    private static final short[] BUCKET_LEVELS = new short[]{
         (short) 0,
         (short) 16,
         (short) 128,
@@ -346,5 +429,103 @@ class BurstTrie {
      */
     public int size(char c) {
         return counts[c];
+    }
+}
+
+/**
+ * A sort/copy job to be completed during the traversal phase. Each job
+ * is given a single bucket to be a processed. If that bucket represents
+ * the "null" bucket, only the string references are copied. Otherwise,
+ * the string "tails" are sorted first and then the references are copied.
+ *
+ * @author  Nathan Fiedler
+ */
+class Job implements Runnable {
+    /** True if this job has already been completed. */
+    private volatile boolean completed;
+    /** The array from the null trie bucket containing strings as Object
+     * references; not to be sorted. */
+    private final Object[] rawInput;
+    /** The array from the trie bucket containing unsorted strings. */
+    private final String[] input;
+    /** The number of elements in the input array. */
+    private final int count;
+    /** The array to which the sorted strings are written. */
+    private final String[] output;
+    /** The position within the strings array at which to store the
+     * sorted results. */
+    private final int offset;
+    /** The depth at which to sort the strings (i.e. the strings often
+     * have a common prefix, and depth is the length of that prefix and
+     * thus the sort routines can ignore those characters). */
+    private final int depth;
+
+    /**
+     * Constructs an instance of Job which merely copies the objects
+     * from the input array to the output array. The input objects
+     * must be of type String.
+     *
+     * @param  input   input array.
+     * @param  count   number of elements from input to consider.
+     * @param  output  output array; only a subset should be modified.
+     * @param  offset  offset within output array to which sorted
+     *                 strings will be written.
+     */
+    public Job(Object[] input, int count, String[] output, int offset) {
+        this.rawInput = input;
+        this.input = null;
+        this.count = count;
+        this.output = output;
+        this.offset = offset;
+        this.depth = 0;
+    }
+
+    /**
+     * Constructs an instance of Job which will sort and then copy the
+     * input strings to the output array.
+     *
+     * @param  input   input array; all elements are copied.
+     * @param  count   number of elements from input to consider.
+     * @param  output  output array; only a subset should be modified.
+     * @param  offset  offset within output array to which sorted
+     *                 strings will be written.
+     * @param  depth   number of charaters in strings to be ignored
+     *                 when sorting (i.e. the common prefix).
+     */
+    public Job(String[] input, int count, String[] output, int offset, int depth) {
+        this.input = input;
+        this.rawInput = null;
+        this.count = count;
+        this.output = output;
+        this.offset = offset;
+        this.depth = depth;
+    }
+
+    /**
+     * Indicates if this job has been completed or not.
+     *
+     * @return
+     */
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    @Override
+    public void run() {
+        if (rawInput != null) {
+            System.arraycopy(rawInput, 0, output, offset, count);
+        } else if (count > 0) {
+            if (count > 1) {
+                // Sort the strings from the bucket.
+                if (count < 20) {
+                    Insertionsort.sort(input, 0, count, depth);
+                } else {
+                    MultikeyQuicksort.sort(input, 0, count, depth);
+                }
+            }
+            // Copy the sorted strings to the destination array.
+            System.arraycopy(input, 0, output, offset, count);
+        }
+        completed = true;
     }
 }

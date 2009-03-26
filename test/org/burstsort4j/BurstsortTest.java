@@ -54,8 +54,26 @@ public class BurstsortTest {
             List<String> data = Tests.loadData("dictwords.gz", true);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            System.out.format("\nDictionary words:\n");
+            System.out.format("\nDictionary words (large):\n");
             Burstsort.sort(arr, System.out);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+    @Test
+    public void testDictWordsParallel() {
+        try {
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            try {
+                Burstsort.sortParallel(arr);
+            } catch (InterruptedException ie) {
+                fail(ie.toString());
+            }
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
