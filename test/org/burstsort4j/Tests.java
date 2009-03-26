@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +72,8 @@ public class Tests {
      *          if a problem occurs.
      */
     public static List<String> loadData() throws IOException {
+        // Note that this dictwords file has different content than the
+        // compressed version, which is much larger.
         return loadData("dictwords", false);
     }
 
