@@ -70,7 +70,7 @@ public class BurstsortTest {
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             try {
-                Burstsort.sortParallel(arr);
+                Burstsort.sortThreadPool(arr);
             } catch (InterruptedException ie) {
                 fail(ie.toString());
             }

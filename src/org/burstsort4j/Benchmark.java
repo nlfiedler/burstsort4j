@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ public class Benchmark {
     /** Number of times each sort implementation is run for each data set. */
     private static final int RUN_COUNT = 5;
     /** Size of the data sets used in testing sort performance. */
-    public enum DataSize {
+    private static enum DataSize {
         SMALL   (100000),
         MEDIUM (1000000),
         LARGE  (3000000);
@@ -72,20 +72,54 @@ public class Benchmark {
      */
     public static void main(String[] args) {
         DataGenerator[] generators = null;
+        SortRunner[] runners = null;
         DataSize[] sizes = null;
-        if (args.length > 0) {
-            if (args.length != 2) {
-                System.out.println("Please provide two arguments: --1|--2|--3 <filename>");
+        if (args.length == 0) {
+            // With no arguments, run the random data generators and all
+            // of the data sizes.
+            generators = new DataGenerator[] {
+                        new RandomGenerator(),
+                        new PsuedoWordGenerator(),
+                        new RepeatGenerator(),
+                        new SmallAlphabetGenerator(),
+                        new RepeatCycleGenerator(),
+                        new GenomeGenerator()
+            };
+            runners = new SortRunner[] {
+                        new MergesortRunner(),
+                        new QuicksortRunner(),
+                        new MultikeyRunner(),
+                        new BurstsortRunner()
+            };
+            sizes = DataSize.values();
+        } else if (args.length == 1) {
+            if (args[0].equals("--parallel")) {
+                generators = new DataGenerator[] {
+                            new RandomGenerator(),
+                            new PsuedoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                };
+                sizes = DataSize.values();
+                runners = new SortRunner[] {
+                            new BurstsortRunner(),
+                            new BurstsortThreadPoolRunner()
+                };
+            } else {
+                usage();
                 System.exit(1);
             }
+        } else if (args.length == 2) {
             // Must provide size argument followed by file name.
             String size = args[0];
             if (size.equals("--3")) {
                 sizes = DataSize.values();
             } else if (size.equals("--2")) {
-                sizes = new DataSize[] { DataSize.SMALL, DataSize.MEDIUM };
+                sizes = new DataSize[]{DataSize.SMALL, DataSize.MEDIUM};
             } else if (size.equals("--1")) {
-                sizes = new DataSize[] { DataSize.SMALL };
+                sizes = new DataSize[]{DataSize.SMALL};
             } else {
                 System.err.println("First argument must be size (--1, --2, or --3)");
                 System.exit(1);
@@ -96,32 +130,34 @@ public class Benchmark {
                 System.exit(1);
             }
             generators = new DataGenerator[] {
-                new FileGenerator(file)
+                        new FileGenerator(file)
+            };
+            runners = new SortRunner[] {
+                        new MergesortRunner(),
+                        new QuicksortRunner(),
+                        new MultikeyRunner(),
+                        new BurstsortRunner()
             };
         } else {
-            // With no arguments, run the random data generators and all
-            // of the data sizes.
-            generators = new DataGenerator[] {
-                new RandomGenerator(),
-                new PsuedoWordGenerator(),
-                new RepeatGenerator(),
-                new SmallAlphabetGenerator(),
-                new RepeatCycleGenerator(),
-                new GenomeGenerator()
-            };
-            sizes = DataSize.values();
+            usage();
+            System.exit(1);
         }
-        SortRunner[] runners = new SortRunner[] {
-            new MergesortRunner(),
-            new QuicksortRunner(),
-            new MultikeyRunner(),
-            new BurstsortRunner(),
-        };
         try {
             runsorts(generators, runners, sizes);
         } catch (GeneratorException ge) {
             ge.printStackTrace();
         }
+    }
+
+    /**
+     * Display a usage message.
+     */
+    private static void usage() {
+        System.out.println("Usage: Benchmark [--parallel]|[--1|--2|--3 <file>]");
+        System.out.println("\t--parallel: run only burstsort tests, both single and multithreaded.");
+        System.out.println("\t--1: load 100k lines from file and benchmark.");
+        System.out.println("\t--2: load 1m lines from file and benchmark.");
+        System.out.println("\t--3: load 3m lines from file and benchmark.");
     }
 
     /**
@@ -508,6 +544,26 @@ public class Benchmark {
         @Override
         public void sort(String[] data) {
             Burstsort.sort(data);
+        }
+    }
+
+    /**
+     * Runs the parallel (thread pool) burstsort implementation.
+     */
+    private static class BurstsortThreadPoolRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "Burstsort|TP|";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            try {
+                Burstsort.sortThreadPool(data);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+            }
         }
     }
 

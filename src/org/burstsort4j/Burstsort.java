@@ -22,6 +22,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -127,20 +128,22 @@ public class Burstsort {
 
     /**
      * Uses all available processors to sort the trie buckets in parallel,
-     * thus sorting the overal set of strings in less time.
+     * thus sorting the overal set of strings in less time. Uses a simple
+     * ThreadPoolExecutor with a maximum pool size equal to the number
+     * of available processors.
      *
      * @param  strings  array of strings to be sorted.
      * @throws  InterruptedException  if waiting thread was interrupted.
      */
-    public static void sortParallel(String[] strings) throws InterruptedException {
+    public static void sortThreadPool(String[] strings) throws InterruptedException {
         if (strings != null && strings.length > 1) {
             BurstTrie root = new BurstTrie();
             insert(root, strings);
             List<Job> jobs = new ArrayList<Job>();
             traverseParallel(root, strings, 0, 0, jobs);
-// TODO: replace this with something faster (fork/join, idempotent work stealing, ...)
             ExecutorService executor = Executors.newFixedThreadPool(
                     Runtime.getRuntime().availableProcessors());
+            // Using ExecutorService.invokeAll() usually adds more time.
             for (Job job : jobs) {
                 executor.submit(job);
             }
@@ -440,7 +443,7 @@ class BurstTrie {
  *
  * @author  Nathan Fiedler
  */
-class Job implements Runnable {
+class Job implements Callable<Object> {
     /** True if this job has already been completed. */
     private volatile boolean completed;
     /** The array from the null trie bucket containing strings as Object
@@ -511,7 +514,7 @@ class Job implements Runnable {
     }
 
     @Override
-    public void run() {
+    public Object call() throws Exception {
         if (rawInput != null) {
             System.arraycopy(rawInput, 0, output, offset, count);
         } else if (count > 0) {
@@ -527,5 +530,6 @@ class Job implements Runnable {
             System.arraycopy(input, 0, output, offset, count);
         }
         completed = true;
+        return null;
     }
 }
