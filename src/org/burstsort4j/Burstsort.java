@@ -41,6 +41,12 @@ public class Burstsort {
     public static final short THRESHOLDMINUSONE = THRESHOLD - 1;
 
     /**
+     * Creates a new instance of Burstsort.
+     */
+    private Burstsort() {
+    }
+
+    /**
      * Retrieve the character in String s at offset d. If d is greater
      * than or equal to the length of the string, return zero. This
      * simulates fixed-length strings that are zero-padded.
