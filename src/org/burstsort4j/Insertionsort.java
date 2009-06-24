@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,12 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class Insertionsort {
+
+    /**
+     * Creates a new instance of Insertionsort.
+     */
+    public Insertionsort() {
+    }
 
     /**
      * Retrieve the character in String s at offset d. If d is greater

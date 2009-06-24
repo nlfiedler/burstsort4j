@@ -36,6 +36,12 @@ import java.util.zip.GZIPInputStream;
 public class Tests {
 
     /**
+     * Creates a new instance of Tests.
+     */
+    public Tests() {
+    }
+
+    /**
      * Generates a set of <em>n</em> strings in a List consisting of
      * <em>l</em> randomly selected alphanumeric characters (mixed case).
      *

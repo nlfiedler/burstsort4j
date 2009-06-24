@@ -66,6 +66,12 @@ public class Benchmark {
     };
 
     /**
+     * Creates a new instance of Benchmark.
+     */
+    private Benchmark() {
+    }
+
+    /**
      * Command-line interface to benchmark driver.
      *
      * @param  args  command-line arguments.

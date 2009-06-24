@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008  Nathan Fiedler
+ * Copyright (C) 2008-2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,12 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class Quicksort {
+
+    /**
+     * Creates a new instance of Quicksort.
+     */
+    public Quicksort() {
+    }
 
     /**
      * Sorts the given array of comparable objects using the standard
