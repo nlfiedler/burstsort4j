@@ -55,7 +55,7 @@ public class Main {
             input = args[1];
             output = args[2];
         } else {
-            sort = MERGESORT;
+            sort = BURSTSORT;
             input = args[0];
             output = args[1];
         }
@@ -92,7 +92,7 @@ public class Main {
     private static void printUsage() {
         System.out.format("Usage: java Main [%s|%s|%s|%s|%s] <input> <output>\n",
                 BURSTSORT, MERGESORT, QUICKSORT, MULTIKEY, SHUFFLE);
-        System.out.println("\tWithout a specified sort, default is mergesort.");
+        System.out.println("\tWithout a specified sort, default is burstsort.");
         System.out.println("\t--shuffle will in fact randomly shuffle the input file.");
         System.out.println("\t<input> is the name of the (unsorted) input file.");
         System.out.println("\t<output> is the name for the (sorted) output file.");
