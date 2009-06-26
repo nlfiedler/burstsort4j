@@ -38,7 +38,7 @@ public class Tests {
     /**
      * Creates a new instance of Tests.
      */
-    public Tests() {
+    private Tests() {
     }
 
     /**
