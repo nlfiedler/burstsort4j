@@ -28,9 +28,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation of the original Burstsort, (arrays) version. There is
- * both a single-threaded version and a multi-threaded implementation,
- * designed to take advantage of multiple CPU cores, if available.
+ * Array-based implementation of the original Burstsort, now referred
+ * to as P-burstsort. There are both single-threaded and multi-threaded
+ * implementations, designed to take advantage of multiple CPU cores,
+ * if available.
  *
  * @author Nathan Fiedler
  */
@@ -43,16 +44,6 @@ public class Burstsort {
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
     /** Size of the alphabet that is supported. */
     private static final short ALPHABET = 256;
-    /** Constants for growing the buckets. */
-    private static final short[] BUCKET_LEVELS = new short[]{
-        (short) 0,
-        (short) 16,
-        (short) 128,
-        (short) 1024,
-        (short) 8192,
-        (short) 16384,
-        (short) 32768
-    };
 
     /**
      * Creates a new instance of Burstsort.
@@ -118,8 +109,7 @@ public class Burstsort {
     }
 
     /**
-     * Sorts the given set of strings using the original burstsort
-     * algorithm.
+     * Sorts the set of strings using the original (P-)burstsort algorithm.
      *
      * @param  strings  array of strings to be sorted.
      */
@@ -128,7 +118,7 @@ public class Burstsort {
     }
 
     /**
-     * Sorts the given set of strings using the original burstsort
+     * Sorts the given set of strings using the original (P-)burstsort
      * algorithm. If the given output stream is non-null, then metrics
      * regarding the burstsort trie structure will be printed there.
      *
@@ -341,6 +331,16 @@ public class Burstsort {
         private int[] counts = new int[ALPHABET];
         /** pointers to buckets or trie node */
         private Object[] ptrs = new Object[ALPHABET];
+        /** Constants for growing the buckets. */
+        private final short[] BUCKET_LEVELS = new short[]{
+            (short) 0,
+            (short) 16,
+            (short) 128,
+            (short) 1024,
+            (short) 8192,
+            (short) 16384,
+            (short) 32768
+        };
 
         /**
          * Add the given string into the appropriate bucket, given the
@@ -357,9 +357,9 @@ public class Burstsort {
             // are buckets already created?
             if (counts[c] < 1) {
                 // create bucket
-                if (c == Burstsort.NULLTERM) {
+                if (c == NULLTERM) {
                     // allocate memory for the bucket
-                    nulltailptr = new Object[Burstsort.THRESHOLD];
+                    nulltailptr = new Object[THRESHOLD];
                     ptrs[c] = nulltailptr;
                     // point to the first cell of the bucket
                     nulltailidx = 0;
@@ -376,7 +376,7 @@ public class Burstsort {
                 }
             } else {
                 // bucket already created, insert string in bucket
-                if (c == Burstsort.NULLTERM) {
+                if (c == NULLTERM) {
                     // insert the string
                     nulltailptr[nulltailidx] = s;
                     // point to next cell
@@ -384,9 +384,9 @@ public class Burstsort {
                     // increment count of items
                     counts[c]++;
                     // check if the bucket is reaching the threshold
-                    if (counts[c] % Burstsort.THRESHOLDMINUSONE == 0) {
+                    if (counts[c] % THRESHOLDMINUSONE == 0) {
                         // Grow the null bucket by daisy chaining a new array.
-                        Object[] tmp = new Object[Burstsort.THRESHOLD];
+                        Object[] tmp = new Object[THRESHOLD];
                         nulltailptr[nulltailidx] = tmp;
                         // point to the first cell in the new array
                         nulltailptr = tmp;
@@ -400,7 +400,7 @@ public class Burstsort {
                     // check for null string buckets as they are not to be
                     // incremented check if the number of items in the bucket
                     // is above a threshold.
-                    if (counts[c] < Burstsort.THRESHOLD &&
+                    if (counts[c] < THRESHOLD &&
                             counts[c] > (BUCKET_LEVELS[levels[c]] - 1)) {
                         String[] temp = (String[]) ptrs[c];
                         ptrs[c] = new String[BUCKET_LEVELS[++levels[c]]];
