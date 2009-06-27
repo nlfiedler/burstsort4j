@@ -38,7 +38,8 @@ import java.util.concurrent.TimeUnit;
 public class Burstsort {
     /** Null terminator character. */
     private static final char NULLTERM = '\0';
-    /** Size of buckets. */
+    /** Maximum number of elements in any given bucket; for null bucket set,
+     * this is the size of each of the chained buckets). */
     private static final short THRESHOLD = 8192;
     /** Used to store reference to next bucket in last cell of bucket. */
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
@@ -52,7 +53,7 @@ public class Burstsort {
     }
 
     /**
-     * Retrieve the character in String s at offset d. If d is greater
+     * Retrieve the character in string s at offset d. If d is greater
      * than or equal to the length of the string, return zero. This
      * simulates fixed-length strings that are zero-padded.
      *
@@ -71,7 +72,7 @@ public class Burstsort {
      * @param  root     root of the structure.
      * @param  strings  strings to be inserted.
      */
-    private static void insert(Node root, String[] strings) {
+    private static void insert(Node root, CharSequence[] strings) {
         for (int i = 0; i < strings.length; i++) {
             // Start at root each time
             Node curr = root;
@@ -92,7 +93,7 @@ public class Burstsort {
                 Node newt = new Node();
                 // burst...
                 char cc = NULLTERM;
-                String[] ptrs = (String[]) curr.get(c);
+                CharSequence[] ptrs = (CharSequence[]) curr.get(c);
                 for (int j = 0; j < curr.size(c); j++) {
                     // access the next depth character
                     cc = charAt(ptrs[j], p);
@@ -113,7 +114,7 @@ public class Burstsort {
      *
      * @param  strings  array of strings to be sorted.
      */
-    public static void sort(String[] strings) {
+    public static void sort(CharSequence[] strings) {
         sort(strings, null);
     }
 
@@ -125,7 +126,7 @@ public class Burstsort {
      * @param  strings  array of strings to be sorted.
      * @param  out      if non-null, metrics are printed here.
      */
-    public static void sort(String[] strings, PrintStream out) {
+    public static void sort(CharSequence[] strings, PrintStream out) {
         if (strings != null && strings.length > 1) {
             Node root = new Node();
             insert(root, strings);
@@ -145,7 +146,7 @@ public class Burstsort {
      * @param  strings  array of strings to be sorted.
      * @throws  InterruptedException  if waiting thread was interrupted.
      */
-    public static void sortThreadPool(String[] strings) throws InterruptedException {
+    public static void sortThreadPool(CharSequence[] strings) throws InterruptedException {
         if (strings != null && strings.length > 1) {
             Node root = new Node();
             insert(root, strings);
@@ -173,7 +174,7 @@ public class Burstsort {
      * @param  deep     character offset within strings.
      * @return  new pos value.
      */
-    private static int traverse(Node node, String[] strings, int pos, int deep) {
+    private static int traverse(Node node, CharSequence[] strings, int pos, int deep) {
         for (char c = 0; c < ALPHABET; c++) {
             int count = node.size(c);
             if (count < 0) {
@@ -196,13 +197,13 @@ public class Burstsort {
                         // Copy the string tails to the sorted array.
                         int j = 0;
                         while (j < no_elements_in_bucket) {
-                            strings[off++] = (String) nullbucket[j++];
+                            strings[off++] = (CharSequence) nullbucket[j++];
                         }
                         nullbucket = (Object[]) nullbucket[j];
                     }
                 } else {
                     // Sort the tail string bucket.
-                    String[] bucket = (String[]) node.get(c);
+                    CharSequence[] bucket = (CharSequence[]) node.get(c);
                     if (count > 1) {
                         if (count < 20) {
                             Insertionsort.sort(bucket, 0, count, deep + 1);
@@ -229,7 +230,7 @@ public class Burstsort {
      * @param  jobs     job list to which new jobs are added.
      * @return  new pos value.
      */
-    private static int traverseParallel(Node node, String[] strings,
+    private static int traverseParallel(Node node, CharSequence[] strings,
             int pos, int deep, List<Callable<Object>> jobs) {
         for (char c = 0; c < ALPHABET; c++) {
             int count = node.size(c);
@@ -258,7 +259,7 @@ public class Burstsort {
                 } else {
                     // A regular bucket with string tails that need to
                     // be sorted and copied to the final destination.
-                    String[] bucket = (String[]) node.get(c);
+                    CharSequence[] bucket = (CharSequence[]) node.get(c);
                     jobs.add(new SortJob(bucket, count, strings, off, deep + 1));
                 }
                 pos += count;
@@ -353,7 +354,7 @@ public class Burstsort {
          * @param  c  character used to index trie entry.
          * @param  s  the string to be inserted.
          */
-        public void add(char c, String s) {
+        public void add(char c, CharSequence s) {
             // are buckets already created?
             if (counts[c] < 1) {
                 // create bucket
@@ -370,8 +371,8 @@ public class Burstsort {
                     // increment count of items
                     counts[c]++;
                 } else {
-                    ptrs[c] = new String[BUCKET_LEVELS[1]];
-                    ((String[]) ptrs[c])[counts[c]++] = s;
+                    ptrs[c] = new CharSequence[BUCKET_LEVELS[1]];
+                    ((CharSequence[]) ptrs[c])[counts[c]++] = s;
                     levels[c]++;
                 }
             } else {
@@ -394,7 +395,7 @@ public class Burstsort {
                     }
                 } else {
                     // insert string in bucket and increment the item counter
-                    ((String[]) ptrs[c])[counts[c]++] = s;
+                    ((CharSequence[]) ptrs[c])[counts[c]++] = s;
                     // Staggered Approach: if the size of the bucket is above
                     // level x, then realloc and increase the level count
                     // check for null string buckets as they are not to be
@@ -402,8 +403,8 @@ public class Burstsort {
                     // is above a threshold.
                     if (counts[c] < THRESHOLD &&
                             counts[c] > (BUCKET_LEVELS[levels[c]] - 1)) {
-                        String[] temp = (String[]) ptrs[c];
-                        ptrs[c] = new String[BUCKET_LEVELS[++levels[c]]];
+                        CharSequence[] temp = (CharSequence[]) ptrs[c];
+                        ptrs[c] = new CharSequence[BUCKET_LEVELS[++levels[c]]];
                         System.arraycopy(temp, 0, ptrs[c], 0, temp.length);
                     }
                 }

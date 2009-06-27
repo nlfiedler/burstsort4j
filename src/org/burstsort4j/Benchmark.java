@@ -113,6 +113,19 @@ public class Benchmark {
                             new BurstsortRunner(),
                             new BurstsortThreadPoolRunner()
                 };
+            } else if (args[0].equals("--burstsort")) {
+                generators = new DataGenerator[] {
+                            new RandomGenerator(),
+                            new PsuedoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                };
+                sizes = DataSize.values();
+                runners = new SortRunner[] {
+                            new BurstsortRunner()
+                };
             } else {
                 usage();
                 System.exit(1);
@@ -160,6 +173,7 @@ public class Benchmark {
      */
     private static void usage() {
         System.out.println("Usage: Benchmark [--parallel]|[--1|--2|--3 <file>]");
+        System.out.println("\t--burstsort: run only the single-threaded burstsort tests.");
         System.out.println("\t--parallel: run only burstsort tests, both single and multithreaded.");
         System.out.println("\t--1: load 100k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");

@@ -32,11 +32,11 @@ public class SortJob implements Callable<Object> {
     /** True if this job has already been completed. */
     private volatile boolean completed;
     /** The array from the trie bucket containing unsorted strings. */
-    private final String[] input;
+    private final CharSequence[] input;
     /** The number of elements in the input array. */
     private final int count;
     /** The array to which the sorted strings are written. */
-    private final String[] output;
+    private final CharSequence[] output;
     /** The position within the strings array at which to store the
      * sorted results. */
     private final int offset;
@@ -57,7 +57,7 @@ public class SortJob implements Callable<Object> {
      * @param  depth   number of charaters in strings to be ignored
      *                 when sorting (i.e. the common prefix).
      */
-    public SortJob(String[] input, int count, String[] output, int offset, int depth) {
+    public SortJob(CharSequence[] input, int count, CharSequence[] output, int offset, int depth) {
         this.input = input;
         this.count = count;
         this.output = output;

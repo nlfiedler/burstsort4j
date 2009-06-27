@@ -37,7 +37,7 @@ public class CopyJob implements Callable<Object> {
     /** The number of elements in the input array. */
     private final int count;
     /** The array to which the sorted strings are written. */
-    private final String[] output;
+    private final CharSequence[] output;
     /** The position within the strings array at which to store the
      * sorted results. */
     private final int offset;
@@ -45,7 +45,7 @@ public class CopyJob implements Callable<Object> {
     /**
      * Constructs an instance of Job which merely copies the objects
      * from the input array to the output array. The input objects
-     * must be of type String.
+     * must be of type CharSequence in order for the copy to succeed.
      *
      * @param  input   input array.
      * @param  count   number of elements from input to consider.
@@ -53,7 +53,7 @@ public class CopyJob implements Callable<Object> {
      * @param  offset  offset within output array to which sorted
      *                 strings will be written.
      */
-    public CopyJob(Object[] input, int count, String[] output, int offset) {
+    public CopyJob(Object[] input, int count, CharSequence[] output, int offset) {
         this.input = input;
         this.count = count;
         this.output = output;

@@ -34,7 +34,7 @@ public class Insertionsort {
     }
 
     /**
-     * Retrieve the character in String s at offset d. If d is greater
+     * Retrieve the character in string s at offset d. If d is greater
      * than or equal to the length of the string, return zero. This
      * simulates fixed-length strings that are zero-padded.
      *
@@ -42,7 +42,7 @@ public class Insertionsort {
      * @param  d  offset.
      * @return  character in s at d, or zero.
      */
-    private static final char charAt(String s, int d) {
+    private static final char charAt(CharSequence s, int d) {
         return d < s.length() ? s.charAt(d) : 0;
     }
 
@@ -79,7 +79,7 @@ public class Insertionsort {
      * @param  high     high offset into the array (exclusive).
      * @param  depth    offset of first character in each string to compare.
      */
-    public static void sort(String[] strings, int low, int high, int depth) {
+    public static void sort(CharSequence[] strings, int low, int high, int depth) {
         if (strings == null) {
             throw new IllegalArgumentException("strings must be non-null");
         }

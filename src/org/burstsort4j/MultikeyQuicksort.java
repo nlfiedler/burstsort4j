@@ -36,7 +36,7 @@ public class MultikeyQuicksort {
     }
 
     /**
-     * Retrieve the character in String s at offset d. If d is greater
+     * Retrieve the character in string s at offset d. If d is greater
      * than or equal to the length of the string, return zero. This
      * simulates fixed-length strings that are zero-padded.
      *
@@ -44,7 +44,7 @@ public class MultikeyQuicksort {
      * @param  d  offset.
      * @return  character in s at d, or zero.
      */
-    private static final char charAt(String s, int d) {
+    private static final char charAt(CharSequence s, int d) {
         return d < s.length() ? s.charAt(d) : 0;
     }
 
@@ -83,7 +83,7 @@ public class MultikeyQuicksort {
      *
      * @param  strings  array of strings to be sorted.
      */
-    public static void sort(String[] strings) {
+    public static void sort(CharSequence[] strings) {
         if (strings != null && strings.length > 1) {
             ssort(strings, 0, strings.length, 0);
         }
@@ -104,7 +104,7 @@ public class MultikeyQuicksort {
      * @param  high     high offset into the array (exclusive).
      * @param  depth    offset of first character in each string to compare.
      */
-    public static void sort(String[] strings, int low, int high, int depth) {
+    public static void sort(CharSequence[] strings, int low, int high, int depth) {
         if (strings != null && strings.length > 1 && low >= 0 && low < high && depth >= 0) {
             ssort(strings, low, high - low, depth);
         }
@@ -122,7 +122,7 @@ public class MultikeyQuicksort {
      * @param  depth  character offset.
      * @return  the position of the median string.
      */
-    private static int med3(String[] a, int l, int m, int h, int depth) {
+    private static int med3(CharSequence[] a, int l, int m, int h, int depth) {
         char va = charAt(a[l], depth);
         char vb = charAt(a[m], depth);
         if (va == vb) {
@@ -144,7 +144,7 @@ public class MultikeyQuicksort {
      * @param  length   length of subarray to consider.
      * @param  depth    the zero-based offset into the strings.
      */
-    private static void ssort(String[] a, int base, int n, int depth) {
+    private static void ssort(CharSequence[] a, int base, int n, int depth) {
         if (n < 8) {
             Insertionsort.sort(a, base, base + n, depth);
             return;
