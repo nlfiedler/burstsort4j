@@ -45,6 +45,16 @@ public class Burstsort {
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
     /** Size of the alphabet that is supported. */
     private static final short ALPHABET = 256;
+    /** Constants for growing the buckets. */
+    private static final short[] BUCKET_LEVELS = new short[]{
+        (short) 0,
+        (short) 16,
+        (short) 128,
+        (short) 1024,
+        (short) 8192,
+        (short) 16384,
+        (short) 32768
+    };
 
     /**
      * Creates a new instance of Burstsort.
@@ -94,7 +104,7 @@ public class Burstsort {
                 // burst...
                 char cc = NULLTERM;
                 CharSequence[] ptrs = (CharSequence[]) curr.get(c);
-                for (int j = 0; j < curr.size(c); j++) {
+                for (short j = 0; j < curr.size(c); j++) {
                     // access the next depth character
                     cc = charAt(ptrs[j], p);
                     newt.add(cc, ptrs[j]);
@@ -176,7 +186,7 @@ public class Burstsort {
      */
     private static int traverse(Node node, CharSequence[] strings, int pos, int deep) {
         for (char c = 0; c < ALPHABET; c++) {
-            int count = node.size(c);
+            short count = node.size(c);
             if (count < 0) {
                 pos = traverse((Node) node.get(c), strings, pos, deep + 1);
             } else if (count > 0) {
@@ -233,7 +243,7 @@ public class Burstsort {
     private static int traverseParallel(Node node, CharSequence[] strings,
             int pos, int deep, List<Callable<Object>> jobs) {
         for (char c = 0; c < ALPHABET; c++) {
-            int count = node.size(c);
+            short count = node.size(c);
             if (count < 0) {
                 pos = traverseParallel((Node) node.get(c), strings, pos,
                         deep + 1, jobs);
@@ -286,7 +296,7 @@ public class Burstsort {
         while (!stack.isEmpty()) {
             node = stack.pop();
             for (char c = 0; c < ALPHABET; c++) {
-                int count = node.size(c);
+                short count = node.size(c);
                 if (count < 0) {
                     stack.push((Node) node.get(c));
                 } else {
@@ -327,21 +337,11 @@ public class Burstsort {
         /** last element in null bucket */
         private int nulltailidx;
         /** level counter of bucket size */
-        private int[] levels = new int[ALPHABET];
+        private byte[] levels = new byte[ALPHABET];
         /** count of items in bucket, or -1 if reference to trie node */
-        private int[] counts = new int[ALPHABET];
+        private short[] counts = new short[ALPHABET];
         /** pointers to buckets or trie node */
         private Object[] ptrs = new Object[ALPHABET];
-        /** Constants for growing the buckets. */
-        private final short[] BUCKET_LEVELS = new short[]{
-            (short) 0,
-            (short) 16,
-            (short) 128,
-            (short) 1024,
-            (short) 8192,
-            (short) 16384,
-            (short) 32768
-        };
 
         /**
          * Add the given string into the appropriate bucket, given the
@@ -441,7 +441,7 @@ public class Burstsort {
          * @param  c  character for which to get count.
          * @return  number of tail strings; -1 if child is a trie node.
          */
-        public int size(char c) {
+        public short size(char c) {
             return counts[c];
         }
     }
