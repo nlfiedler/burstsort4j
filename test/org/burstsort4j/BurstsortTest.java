@@ -112,7 +112,7 @@ public class BurstsortTest {
     @Test
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
-        String[] arr = new String[16384];
+        String[] arr = new String[131072];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         System.out.format("\nRepeated alphabet string:\n");
         Burstsort.sort(arr, System.out);
