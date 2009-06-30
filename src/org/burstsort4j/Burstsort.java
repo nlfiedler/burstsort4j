@@ -288,6 +288,7 @@ public class Burstsort {
     private static void writeMetrics(Node node, PrintStream out) {
         Stack<Node> stack = new Stack<Node>();
         stack.push(node);
+        int nodes = 0;
         int buckets = 0;
         int nonEmptyBuckets = 0;
         int smallest = Integer.MAX_VALUE;
@@ -295,6 +296,7 @@ public class Burstsort {
         long sum = 0;
         while (!stack.isEmpty()) {
             node = stack.pop();
+            nodes++;
             for (char c = 0; c < ALPHABET; c++) {
                 int count = node.size(c);
                 if (count < 0) {
@@ -316,6 +318,7 @@ public class Burstsort {
                 }
             }
         }
+        out.format("Trie node count: %d\n", nodes);
         out.format("Bucket count: %d\n", buckets);
         out.format("Smallest bucket: %d\n", smallest);
         out.format("Largest bucket: %d\n", largest);
