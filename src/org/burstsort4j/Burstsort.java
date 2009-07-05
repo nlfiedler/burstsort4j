@@ -45,16 +45,11 @@ public class Burstsort {
     private static final short THRESHOLDMINUSONE = THRESHOLD - 1;
     /** Size of the alphabet that is supported. */
     private static final short ALPHABET = 256;
-    /** Constants for growing the buckets. */
-    private static final short[] BUCKET_LEVELS = new short[]{
-        (short) 0,
-        (short) 16,
-        (short) 128,
-        (short) 1024,
-        (short) 8192,
-        (short) 16384,
-        (short) 32768
-    };
+    /** Initial size for new buckets. */
+    private static final short BUCKET_START_SIZE = 16;
+    /** The bucket growth factor (replaces the bucket_inc array in the
+     * original C implementation). */
+    private static final short BUCKET_GROWTH_FACTOR = 8;
 
     /**
      * Creates a new instance of Burstsort.
@@ -290,6 +285,7 @@ public class Burstsort {
         stack.push(node);
         int nodes = 0;
         int buckets = 0;
+        int consumedStrings = 0;
         int nonEmptyBuckets = 0;
         int smallest = Integer.MAX_VALUE;
         int largest = Integer.MIN_VALUE;
@@ -302,6 +298,9 @@ public class Burstsort {
                 if (count < 0) {
                     stack.push((Node) node.get(c));
                 } else {
+                    if (c == 0) {
+                        consumedStrings += count;
+                    }
                     buckets++;
                     // Only consider non-empty buckets, as there will
                     // always be empty buckets.
@@ -318,8 +317,9 @@ public class Burstsort {
                 }
             }
         }
-        out.format("Trie node count: %d\n", nodes);
-        out.format("Bucket count: %d\n", buckets);
+        out.format("Trie nodes: %d\n", nodes);
+        out.format("Total buckets: %d\n", buckets);
+        out.format("Consumed strings: %d\n", consumedStrings);
         out.format("Smallest bucket: %d\n", smallest);
         out.format("Largest bucket: %d\n", largest);
         out.format("Average bucket: %d\n", sum / nonEmptyBuckets);
@@ -339,12 +339,10 @@ public class Burstsort {
         private Object[] nulltailptr;
         /** last element in null bucket */
         private int nulltailidx;
-        /** level counter of bucket size */
-        private byte[] levels = new byte[ALPHABET];
         /** count of items in bucket, or -1 if reference to trie node */
-        private int[] counts = new int[ALPHABET];
+        private final int[] counts = new int[ALPHABET];
         /** pointers to buckets or trie node */
-        private Object[] ptrs = new Object[ALPHABET];
+        private final Object[] ptrs = new Object[ALPHABET];
 
         /**
          * Add the given string into the appropriate bucket, given the
@@ -365,18 +363,17 @@ public class Burstsort {
                     // allocate memory for the bucket
                     nulltailptr = new Object[THRESHOLD];
                     ptrs[c] = nulltailptr;
-                    // point to the first cell of the bucket
-                    nulltailidx = 0;
                     // insert the string
-                    nulltailptr[nulltailidx] = s;
+                    nulltailptr[0] = s;
                     // point to next cell
-                    nulltailidx++;
+                    nulltailidx = 1;
                     // increment count of items
                     counts[c]++;
                 } else {
-                    ptrs[c] = new CharSequence[BUCKET_LEVELS[1]];
-                    ((CharSequence[]) ptrs[c])[counts[c]++] = s;
-                    levels[c]++;
+                    CharSequence[] cs = new CharSequence[BUCKET_START_SIZE];
+                    cs[0] = s;
+                    ptrs[c] = cs;
+                    counts[c]++;
                 }
             } else {
                 // bucket already created, insert string in bucket
@@ -397,18 +394,14 @@ public class Burstsort {
                         nulltailidx = 0;
                     }
                 } else {
-                    // insert string in bucket and increment the item counter
-                    ((CharSequence[]) ptrs[c])[counts[c]++] = s;
-                    // Staggered Approach: if the size of the bucket is above
-                    // level x, then realloc and increase the level count
-                    // check for null string buckets as they are not to be
-                    // incremented check if the number of items in the bucket
-                    // is above a threshold.
-                    if (counts[c] < THRESHOLD &&
-                            counts[c] > (BUCKET_LEVELS[levels[c]] - 1)) {
-                        CharSequence[] temp = (CharSequence[]) ptrs[c];
-                        ptrs[c] = new CharSequence[BUCKET_LEVELS[++levels[c]]];
-                        System.arraycopy(temp, 0, ptrs[c], 0, temp.length);
+                    // Insert string in bucket and increment the item counter.
+                    CharSequence[] cs = (CharSequence[]) ptrs[c];
+                    cs[counts[c]++] = s;
+                    // If the bucket is full, increase its size, but only
+                    // up to the threshold value.
+                    if (counts[c] < THRESHOLD && counts[c] == cs.length) {
+                        ptrs[c] = new CharSequence[cs.length * BUCKET_GROWTH_FACTOR];
+                        System.arraycopy(cs, 0, ptrs[c], 0, cs.length);
                     }
                 }
             }
