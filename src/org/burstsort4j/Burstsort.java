@@ -99,7 +99,8 @@ public class Burstsort {
                 // burst...
                 char cc = NULLTERM;
                 CharSequence[] ptrs = (CharSequence[]) curr.get(c);
-                for (short j = 0; j < curr.size(c); j++) {
+                int size = curr.size(c);
+                for (int j = 0; j < size; j++) {
                     // access the next depth character
                     cc = charAt(ptrs[j], p);
                     newt.add(cc, ptrs[j]);
@@ -284,7 +285,6 @@ public class Burstsort {
         Stack<Node> stack = new Stack<Node>();
         stack.push(node);
         int nodes = 0;
-        int buckets = 0;
         int consumedStrings = 0;
         int nonEmptyBuckets = 0;
         int smallest = Integer.MAX_VALUE;
@@ -301,7 +301,6 @@ public class Burstsort {
                     if (c == 0) {
                         consumedStrings += count;
                     }
-                    buckets++;
                     // Only consider non-empty buckets, as there will
                     // always be empty buckets.
                     if (count > 0) {
@@ -318,7 +317,7 @@ public class Burstsort {
             }
         }
         out.format("Trie nodes: %d\n", nodes);
-        out.format("Total buckets: %d\n", buckets);
+        out.format("Total buckets: %d\n", nonEmptyBuckets);
         out.format("Consumed strings: %d\n", consumedStrings);
         out.format("Smallest bucket: %d\n", smallest);
         out.format("Largest bucket: %d\n", largest);
@@ -439,6 +438,135 @@ public class Burstsort {
          */
         public int size(char c) {
             return counts[c];
+        }
+    }
+
+    /**
+     * A copy job to be completed after the trie traversal phase. Each job
+     * is given a single bucket to be a processed. A copy job simply copies
+     * the string references from the null bucket to the string output array.
+     *
+     * @author  Nathan Fiedler
+     */
+    private static class CopyJob implements Callable<Object> {
+        /** True if this job has already been completed. */
+        private volatile boolean completed;
+        /** The array from the null trie bucket containing strings as Object
+         * references; not to be sorted. */
+        private final Object[] input;
+        /** The number of elements in the input array. */
+        private final int count;
+        /** The array to which the sorted strings are written. */
+        private final CharSequence[] output;
+        /** The position within the strings array at which to store the
+         * sorted results. */
+        private final int offset;
+
+        /**
+         * Constructs an instance of Job which merely copies the objects
+         * from the input array to the output array. The input objects
+         * must be of type CharSequence in order for the copy to succeed.
+         *
+         * @param  input   input array.
+         * @param  count   number of elements from input to consider.
+         * @param  output  output array; only a subset should be modified.
+         * @param  offset  offset within output array to which sorted
+         *                 strings will be written.
+         */
+        public CopyJob(Object[] input, int count, CharSequence[] output, int offset) {
+            this.input = input;
+            this.count = count;
+            this.output = output;
+            this.offset = offset;
+        }
+
+        /**
+         * Indicates if this job has been completed or not.
+         *
+         * @return  true if job has been completed, false otherwise.
+         */
+        public boolean isCompleted() {
+            return completed;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            System.arraycopy(input, 0, output, offset, count);
+            completed = true;
+            return null;
+        }
+    }
+
+    /**
+     * A sort job to be completed after the trie traversal phase. Each job
+     * is given a single bucket to be a processed. A sort job first sorts the
+     * the string "tails" and then copies the references to the output array.
+     *
+     * @author  Nathan Fiedler
+     */
+    private static class SortJob implements Callable<Object> {
+        /** True if this job has already been completed. */
+        private volatile boolean completed;
+        /** The array from the trie bucket containing unsorted strings. */
+        private final CharSequence[] input;
+        /** The number of elements in the input array. */
+        private final int count;
+        /** The array to which the sorted strings are written. */
+        private final CharSequence[] output;
+        /** The position within the strings array at which to store the
+         * sorted results. */
+        private final int offset;
+        /** The depth at which to sort the strings (i.e. the strings often
+         * have a common prefix, and depth is the length of that prefix and
+         * thus the sort routines can ignore those characters). */
+        private final int depth;
+
+        /**
+         * Constructs an instance of Job which will sort and then copy the
+         * input strings to the output array.
+         *
+         * @param  input   input array; all elements are copied.
+         * @param  count   number of elements from input to consider.
+         * @param  output  output array; only a subset should be modified.
+         * @param  offset  offset within output array to which sorted
+         *                 strings will be written.
+         * @param  depth   number of charaters in strings to be ignored
+         *                 when sorting (i.e. the common prefix).
+         */
+        public SortJob(CharSequence[] input, int count, CharSequence[] output,
+                int offset, int depth) {
+            this.input = input;
+            this.count = count;
+            this.output = output;
+            this.offset = offset;
+            this.depth = depth;
+        }
+
+        /**
+         * Indicates if this job has been completed or not.
+         *
+         * @return
+         */
+        public boolean isCompleted() {
+            return completed;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            if (count > 0) {
+                if (count > 1) {
+                    // Sort the strings from the bucket.
+                    if (count < 20) {
+                        Insertionsort.sort(input, 0, count, depth);
+                    } else {
+                        MultikeyQuicksort.sort(input, 0, count, depth);
+                    }
+                }
+                // Copy the sorted strings to the destination array.
+                System.arraycopy(input, 0, output, offset, count);
+            }
+            completed = true;
+            return null;
         }
     }
 }
