@@ -124,8 +124,8 @@ public class Benchmark {
                 };
                 sizes = DataSize.values();
                 runners = new SortRunner[] {
-//                            new BurstsortRunner(true)
-                            new BurstsortRunner()
+                            new BurstsortRunner(),
+                            new RedesignedBurstsortRunner()
                 };
             } else {
                 usage();
@@ -586,6 +586,44 @@ public class Benchmark {
                 Burstsort.sort(data, System.out);
             } else {
                 Burstsort.sort(data);
+            }
+        }
+    }
+
+    /**
+     * Runs the redesigned burstsort implementation.
+     */
+    private static class RedesignedBurstsortRunner implements SortRunner {
+        /** If true, print metrics about the data structure. */
+        private boolean printMetrics;
+
+        /**
+         * Creates a new instance of RedesignedBurstsortRunner.
+         */
+        public RedesignedBurstsortRunner() {
+            this(false);
+        }
+
+        /**
+         * Creates a new instance of RedesignedBurstsortRunner.
+         *
+         * @param  metrics  if true, displays data structure information.
+         */
+        public RedesignedBurstsortRunner(boolean metrics) {
+            printMetrics = metrics;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "BR-Burstsort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            if (printMetrics) {
+                RedesignedBurstsort.sort(data, System.out);
+            } else {
+                RedesignedBurstsort.sort(data);
             }
         }
     }
