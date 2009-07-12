@@ -62,24 +62,23 @@ public class RedesignedBurstsortTest {
         }
     }
 
-// XXX
-//    @Test
-//    public void testDictWordsParallel() {
-//        try {
-//            // Use the large dictionary rather than the trivial one.
-//            List<String> data = Tests.loadData("dictwords.gz", true);
-//            Collections.shuffle(data);
-//            String[] arr = data.toArray(new String[data.size()]);
-//            try {
-//                RedesignedBurstsort.sortThreadPool(arr);
-//            } catch (InterruptedException ie) {
-//                fail(ie.toString());
-//            }
-//            assertTrue(Tests.isSorted(arr));
-//        } catch (IOException ioe) {
-//            fail(ioe.toString());
-//        }
-//    }
+    @Test
+    public void testDictWordsParallel() {
+        try {
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            try {
+                RedesignedBurstsort.sortThreadPool(arr);
+            } catch (InterruptedException ie) {
+                fail(ie.toString());
+            }
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
 
     @Test
     public void testSorted() {

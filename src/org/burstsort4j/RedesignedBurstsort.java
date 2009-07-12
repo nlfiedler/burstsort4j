@@ -258,31 +258,8 @@ public class RedesignedBurstsort {
                 pos = traverseParallel((Node) node.get(c), strings, pos,
                         deep + 1, jobs);
             } else if (count > 0) {
-                int off = pos;
-                if (c == 0) {
-// XXX
-//                    // Visit all of the null buckets, which are daisy-chained
-//                    // together with the last reference in each bucket pointing
-//                    // to the next bucket in the chain.
-//                    int no_of_buckets = (count / THRESHOLDMINUSONE) + 1;
-//                    Object[] nullbucket = (Object[]) node.get(c);
-//                    for (int k = 1; k <= no_of_buckets; k++) {
-//                        int no_elements_in_bucket;
-//                        if (k == no_of_buckets) {
-//                            no_elements_in_bucket = count % THRESHOLDMINUSONE;
-//                        } else {
-//                            no_elements_in_bucket = THRESHOLDMINUSONE;
-//                        }
-//                        jobs.add(new CopyJob(nullbucket, no_elements_in_bucket, strings, off));
-//                        off += no_elements_in_bucket;
-//                        nullbucket = (Object[]) nullbucket[no_elements_in_bucket];
-//                    }
-                } else {
-                    // A regular bucket with string tails that need to
-                    // be sorted and copied to the final destination.
-//                    CharSequence[] bucket = (CharSequence[]) node.get(c);
-//                    jobs.add(new SortJob(bucket, count, strings, off, deep + 1));
-                }
+                Object[] bind = (Object[]) node.get(c);
+                jobs.add(new CopySortJob(bind, count, strings, pos, deep + 1));
                 pos += count;
             }
         }
@@ -455,6 +432,98 @@ public class RedesignedBurstsort {
          */
         public int size(char c) {
             return counts[c];
+        }
+    }
+
+    /**
+     * A copy and sort job to be completed after the trie traversal phase.
+     * Each job is given a single bucket to be a processed. The job first
+     * copies the bucket entries to the output array and then sorts the
+     * the string "tails" within the output array.
+     *
+     * @author  Nathan Fiedler
+     */
+    private static class CopySortJob implements Callable<Object> {
+        /** True if this job has already been completed. */
+        private volatile boolean completed;
+        /** Bucket index to be copied. */
+        private final Object[] bind;
+        /** The number of elements in the input array. */
+        private final int count;
+        /** The array to which the sorted strings are written. */
+        private final CharSequence[] output;
+        /** The position within the strings array at which to store the
+         * sorted results. */
+        private final int offset;
+        /** The depth at which to sort the strings (i.e. the strings often
+         * have a common prefix, and depth is the length of that prefix and
+         * thus the sort routines can ignore those characters). */
+        private final int depth;
+
+        /**
+         * Constructs an instance of Job which will sort and then copy the
+         * input strings to the output array.
+         *
+         * @param  bind    index for bucket to be copied and sorted.
+         * @param  count   number of elements in the bucket structure.
+         * @param  output  output array; only a subset should be modified.
+         * @param  offset  offset within output array to which sorted
+         *                 strings will be written.
+         * @param  depth   number of charaters in strings to be ignored
+         *                 when sorting (i.e. the common prefix).
+         */
+        public CopySortJob(Object[] bind, int count, CharSequence[] output,
+                int offset, int depth) {
+            this.bind = bind;
+            this.count = count;
+            this.output = output;
+            this.offset = offset;
+            this.depth = depth;
+        }
+
+        /**
+         * Indicates if this job has been completed or not.
+         *
+         * @return
+         */
+        public boolean isCompleted() {
+            return completed;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            // Copy the string references from the bucket to the
+            // destination. This is done for all node entries, even
+            // the null bucket.
+            int off = offset;
+            for (int j = 0; j < bind.length; /* see below */) {
+                CharSequence[] sub = (CharSequence[]) bind[j];
+                int limit = sub.length;
+                j++;
+                if (j == bind.length) {
+                    // Last sub-bucket may not be fully utilized.
+                    int last = count % SUBBUCKET_THRESHOLD;
+                    if (last > 0) {
+                        limit = last;
+                    }
+                }
+                System.arraycopy(sub, 0, output, off, limit);
+                off += limit;
+            }
+            if (count > 0) {
+                // Sort the strings that were just copied to the
+                // destination now that they are all in one array.
+                if (count > 1) {
+                    int high = offset + count;
+                    if (count < 20) {
+                        Insertionsort.sort(output, offset, high, depth);
+                    } else {
+                        MultikeyQuicksort.sort(output, offset, high, depth);
+                    }
+                }
+            }
+            completed = true;
+            return null;
         }
     }
 }
