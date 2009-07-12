@@ -129,6 +129,7 @@ public class Tests {
     public static boolean isRepeated(String[] arr, String s) {
         for (int ii = 0; ii < arr.length; ii++) {
             if (!arr[ii].equals(s)) {
+                System.err.format("%s != %s @ %d\n", arr[ii], s, ii);
                 return false;
             }
         }
@@ -144,6 +145,7 @@ public class Tests {
     public static boolean isSorted(String[] arr) {
         for (int ii = 1; ii < arr.length; ii++) {
             if (arr[ii - 1].compareTo(arr[ii]) > 0) {
+                System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
                 return false;
             }
         }
