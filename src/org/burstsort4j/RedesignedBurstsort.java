@@ -279,10 +279,11 @@ public class RedesignedBurstsort {
         int nodes = 0;
         int buckets = 0;
         int consumedStrings = 0;
+        int bucketStrings = 0;
+        int bucketSpace = 0;
         int nonEmptyBuckets = 0;
         int smallest = Integer.MAX_VALUE;
         int largest = Integer.MIN_VALUE;
-        long sum = 0;
         while (!stack.isEmpty()) {
             node = stack.pop();
             nodes++;
@@ -291,14 +292,21 @@ public class RedesignedBurstsort {
                 if (count < 0) {
                     stack.push((Node) node.get(c));
                 } else {
-                    if (c == 0) {
-                        consumedStrings += count;
-                    }
                     buckets++;
                     // Only consider non-empty buckets, as there will
                     // always be empty buckets.
                     if (count > 0) {
-                        sum += count;
+                        if (c == 0) {
+                            consumedStrings += count;
+                        } else {
+                            bucketStrings += count;
+                        }
+                        Object[] bind = (Object[]) node.get(c);
+                        bucketSpace += bind.length;
+                        for (int j = 0; j < bind.length; j++) {
+                            CharSequence[] sub = (CharSequence[]) bind[j];
+                            bucketSpace += sub.length;
+                        }
                         if (count < smallest) {
                             smallest = count;
                         }
@@ -312,10 +320,15 @@ public class RedesignedBurstsort {
         }
         out.format("Trie nodes: %d\n", nodes);
         out.format("Total buckets: %d\n", buckets);
+        out.format("Bucket strings: %d\n", bucketStrings);
         out.format("Consumed strings: %d\n", consumedStrings);
         out.format("Smallest bucket: %d\n", smallest);
         out.format("Largest bucket: %d\n", largest);
+        long sum = consumedStrings + bucketStrings;
         out.format("Average bucket: %d\n", sum / nonEmptyBuckets);
+        out.format("Bucket capacity: %d\n", bucketSpace);
+        double usage = ((double) sum * 100) / (double) bucketSpace;
+        out.format("Usage ratio: %.2f\n", usage);
     }
 
     /**
