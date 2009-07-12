@@ -95,7 +95,8 @@ public class Benchmark {
                         new MergesortRunner(),
                         new QuicksortRunner(),
                         new MultikeyRunner(),
-                        new BurstsortRunner()
+                        new BurstsortRunner(),
+                        new RedesignedBurstsortRunner()
             };
             sizes = DataSize.values();
         } else if (args.length == 1) {
@@ -111,7 +112,9 @@ public class Benchmark {
                 sizes = DataSize.values();
                 runners = new SortRunner[] {
                             new BurstsortRunner(),
-                            new BurstsortThreadPoolRunner()
+                            new BurstsortThreadPoolRunner(),
+                            new RedesignedBurstsortRunner(),
+                            new RedesignedBurstsortThreadPoolRunner()
                 };
             } else if (args[0].equals("--burstsort")) {
                 generators = new DataGenerator[] {
@@ -213,7 +216,7 @@ public class Benchmark {
                 System.out.format("\t%s...\n", size.toString());
                 List<String> data = generator.generate(size);
                 for (SortRunner runner : runners) {
-                    System.out.format("\t\t%s:\t", runner.getDisplayName());
+                    System.out.format("\t\t%-20s:\t", runner.getDisplayName());
                     long[] times = new long[RUN_COUNT];
                     for (int run = 0; run < times.length; run++) {
                         String[] arr = data.toArray(new String[data.size()]);
@@ -221,16 +224,36 @@ public class Benchmark {
                         runner.sort(arr);
                         long t2 = System.currentTimeMillis();
                         times[run] = t2 - t1;
+                        if (run == 0) {
+                            // Verify the results are actually sorted, just
+                            // in case the unit tests missed something.
+                            for (int ii = 1; ii < arr.length; ii++) {
+                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
+                                    System.err.format("Sort %s failed!\n", runner.getDisplayName());
+                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
+                                    System.exit(1);
+                                }
+                            }
+                        }
                     }
                     // Find the average of the run times, dropping the
                     // high and low values. The run times should never
                     // be more than a couple of minutes, so these
                     // calculations will never overflow.
-                    Arrays.sort(times);
                     long total = 0;
-                    for (int run = 1; run < RUN_COUNT - 1; run++) {
+                    long highest = Long.MIN_VALUE;
+                    long lowest = Long.MAX_VALUE;
+                    for (int run = 0; run < RUN_COUNT; run++) {
                         total += times[run];
+                        if (times[run] > highest) {
+                            highest = times[run];
+                        }
+                        if (times[run] < lowest) {
+                            lowest = times[run];
+                        }
                     }
+                    total -= lowest;
+                    total -= highest;
                     long average = total / (RUN_COUNT - 2);
                     System.out.format("%d ms\n", average);
                 }
@@ -556,24 +579,6 @@ public class Benchmark {
      * Runs the burstsort implementation.
      */
     private static class BurstsortRunner implements SortRunner {
-        /** If true, print metrics about the data structure. */
-        private boolean printMetrics;
-
-        /**
-         * Creates a new instance of BurstsortRunner.
-         */
-        public BurstsortRunner() {
-            this(false);
-        }
-
-        /**
-         * Creates a new instance of BurstsortRunner.
-         *
-         * @param  metrics  if true, displays data structure information.
-         */
-        public BurstsortRunner(boolean metrics) {
-            printMetrics = metrics;
-        }
 
         @Override
         public String getDisplayName() {
@@ -582,11 +587,7 @@ public class Benchmark {
 
         @Override
         public void sort(String[] data) {
-            if (printMetrics) {
-                Burstsort.sort(data, System.out);
-            } else {
-                Burstsort.sort(data);
-            }
+            Burstsort.sort(data);
         }
     }
 
@@ -594,24 +595,6 @@ public class Benchmark {
      * Runs the redesigned burstsort implementation.
      */
     private static class RedesignedBurstsortRunner implements SortRunner {
-        /** If true, print metrics about the data structure. */
-        private boolean printMetrics;
-
-        /**
-         * Creates a new instance of RedesignedBurstsortRunner.
-         */
-        public RedesignedBurstsortRunner() {
-            this(false);
-        }
-
-        /**
-         * Creates a new instance of RedesignedBurstsortRunner.
-         *
-         * @param  metrics  if true, displays data structure information.
-         */
-        public RedesignedBurstsortRunner(boolean metrics) {
-            printMetrics = metrics;
-        }
 
         @Override
         public String getDisplayName() {
@@ -620,11 +603,7 @@ public class Benchmark {
 
         @Override
         public void sort(String[] data) {
-            if (printMetrics) {
-                RedesignedBurstsort.sort(data, System.out);
-            } else {
-                RedesignedBurstsort.sort(data);
-            }
+            RedesignedBurstsort.sort(data);
         }
     }
 
@@ -642,6 +621,26 @@ public class Benchmark {
         public void sort(String[] data) {
             try {
                 Burstsort.sortThreadPool(data);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Runs the parallel (thread pool) redesigned burstsort implementation.
+     */
+    private static class RedesignedBurstsortThreadPoolRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "BR-Burstsort|TP|";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            try {
+                RedesignedBurstsort.sortThreadPool(data);
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
@@ -675,7 +674,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Multikey";
+            return "MultikeyQS";
         }
 
         @Override
