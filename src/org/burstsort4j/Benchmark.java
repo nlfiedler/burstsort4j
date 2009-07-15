@@ -159,7 +159,8 @@ public class Benchmark {
                         new MergesortRunner(),
                         new QuicksortRunner(),
                         new MultikeyRunner(),
-                        new BurstsortRunner()
+                        new BurstsortRunner(),
+                        new RedesignedBurstsortRunner()
             };
         } else {
             usage();
