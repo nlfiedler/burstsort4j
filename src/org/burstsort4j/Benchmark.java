@@ -160,7 +160,9 @@ public class Benchmark {
                         new QuicksortRunner(),
                         new MultikeyRunner(),
                         new BurstsortRunner(),
-                        new RedesignedBurstsortRunner()
+                        new BurstsortThreadPoolRunner(),
+                        new RedesignedBurstsortRunner(),
+                        new RedesignedBurstsortThreadPoolRunner()
             };
         } else {
             usage();
@@ -177,12 +179,13 @@ public class Benchmark {
      * Display a usage message.
      */
     private static void usage() {
-        System.out.println("Usage: Benchmark [--parallel]|[--1|--2|--3 <file>]");
+        System.out.println("Usage: Benchmark [<options>]|[--1|--2|--3 <file>]");
         System.out.println("\t--burstsort: run only the single-threaded burstsort tests.");
         System.out.println("\t--parallel: run only burstsort tests, both single and multithreaded.");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
         System.out.println("\t--3: load 3m lines from file and benchmark.");
+        System.out.println("\t\tFor the file benchmarks, all tests are run.");
     }
 
     /**
