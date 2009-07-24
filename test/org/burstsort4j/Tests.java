@@ -105,6 +105,20 @@ public class Tests {
      *          if a problem occurs.
      */
     public static List<String> loadData(String file, boolean gzip) throws IOException {
+        return loadData(file, gzip, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Loads the specified test data into a list of strings.
+     *
+     * @param  file   name of file to be loaded (must be present in classpath).
+     * @param  gzip   if true, stream will be decompressed using gzip.
+     * @param  count  number of lines to be read.
+     * @return  test data as a list.
+     * @throws  java.io.IOException
+     *          if a problem occurs.
+     */
+    public static List<String> loadData(String file, boolean gzip, int count) throws IOException {
         InputStream is = Tests.class.getResourceAsStream(file);
         if (gzip) {
             is = new GZIPInputStream(is);
@@ -114,6 +128,10 @@ public class Tests {
         BufferedReader br = new BufferedReader(isr);
         for (String ln = br.readLine(); ln != null; ln = br.readLine()) {
             list.add(ln);
+            count--;
+            if (count == 0) {
+                break;
+            }
         }
         br.close();
         return list;

@@ -16,7 +16,6 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
 /**
@@ -26,25 +25,6 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class Insertionsort {
-
-    /**
-     * Creates a new instance of Insertionsort.
-     */
-    public Insertionsort() {
-    }
-
-    /**
-     * Retrieve the character in string s at offset d. If d is greater
-     * than or equal to the length of the string, return zero. This
-     * simulates fixed-length strings that are zero-padded.
-     *
-     * @param  s  string.
-     * @param  d  offset.
-     * @return  character in s at d, or zero.
-     */
-    private static final char charAt(CharSequence s, int d) {
-        return d < s.length() ? s.charAt(d) : 0;
-    }
 
     /**
      * Sort the array of comparables within the given range of elements.
@@ -89,31 +69,20 @@ public class Insertionsort {
         for (int i = low + 1; i < high; i++) {
             for (int j = i; j > low; j--) {
                 int idx = depth;
-                char s = charAt(strings[j - 1], idx);
-                char t = charAt(strings[j], idx);
+                char s = idx < strings[j - 1].length() ? strings[j - 1].charAt(idx) : 0;
+                char t = idx < strings[j].length() ? strings[j].charAt(idx) : 0;
                 while (s == t && idx < strings[j - 1].length()) {
-                    s = charAt(strings[j - 1], idx);
-                    t = charAt(strings[j], idx);
                     idx++;
+                    s = idx < strings[j - 1].length() ? strings[j - 1].charAt(idx) : 0;
+                    t = idx < strings[j].length() ? strings[j].charAt(idx) : 0;
                 }
                 if (s <= t) {
                     break;
                 }
-                swap(strings, j, j - 1);
+                CharSequence tmp = strings[j];
+                strings[j] = strings[j - 1];
+                strings[j - 1] = tmp;
             }
         }
-    }
-
-    /**
-     * Method to swap to elements in an array.
-     *
-     * @param  a  an array of objects.
-     * @param  x  the index of the first object.
-     * @param  y  the index of the second object.
-     */
-    private static final void swap(Object[] a, int x, int y) {
-        Object tmp = a[x];
-        a[x] = a[y];
-        a[y] = tmp;
     }
 }

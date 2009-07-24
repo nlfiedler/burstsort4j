@@ -50,7 +50,7 @@ public class InsertionsortTest {
     @Test
     public void testComparable() {
         try {
-            List<String> data = Tests.loadData();
+            List<String> data = Tests.loadData("dictwords", false, 256);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length - 1);
@@ -64,7 +64,7 @@ public class InsertionsortTest {
             Insertionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
-            data = Tests.loadData("hamletwords");
+            data = Tests.loadData("hamletwords", false, 256);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length - 1);
@@ -95,7 +95,7 @@ public class InsertionsortTest {
     @Test
     public void testStrings() {
         try {
-            List<String> data = Tests.loadData();
+            List<String> data = Tests.loadData("dictwords", false, 256);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length, 0);
@@ -109,7 +109,7 @@ public class InsertionsortTest {
             Insertionsort.sort(arr, 0, arr.length, 0);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
-            data = Tests.loadData("hamletwords");
+            data = Tests.loadData("hamletwords", false, 256);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length, 0);
