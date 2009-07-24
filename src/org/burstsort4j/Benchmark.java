@@ -130,6 +130,20 @@ public class Benchmark {
                             new BurstsortRunner(),
                             new RedesignedBurstsortRunner()
                 };
+            } else if (args[0].equals("--only-parallel-large")) {
+                generators = new DataGenerator[] {
+                            new RandomGenerator(),
+                            new PsuedoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                };
+                sizes = new DataSize[]{DataSize.LARGE};
+                runners = new SortRunner[] {
+                            new BurstsortThreadPoolRunner(),
+                            new RedesignedBurstsortThreadPoolRunner()
+                };
             } else {
                 usage();
                 System.exit(1);
@@ -182,6 +196,7 @@ public class Benchmark {
         System.out.println("Usage: Benchmark [<options>]|[--1|--2|--3 <file>]");
         System.out.println("\t--burstsort: run only the single-threaded burstsort tests.");
         System.out.println("\t--parallel: run only burstsort tests, both single and multithreaded.");
+        System.out.println("\t--only-parallel-large: run only parallel sorts with large data");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
         System.out.println("\t--3: load 3m lines from file and benchmark.");
