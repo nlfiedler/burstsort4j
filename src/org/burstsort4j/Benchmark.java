@@ -91,59 +91,56 @@ public class Benchmark {
                         new RepeatCycleGenerator(),
                         new GenomeGenerator()
             };
-            runners = new SortRunner[] {
-                        new MergesortRunner(),
-                        new QuicksortRunner(),
-                        new MultikeyRunner(),
-                        new BurstsortRunner(),
-                        new RedesignedBurstsortRunner()
-            };
-            sizes = DataSize.values();
-        } else if (args.length == 1) {
-            if (args[0].equals("--parallel")) {
-                generators = new DataGenerator[] {
-                            new RandomGenerator(),
-                            new PsuedoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                };
-                sizes = DataSize.values();
-                runners = new SortRunner[] {
+            if (Runtime.getRuntime().availableProcessors() > 1) {
+                // If there is more than one CPU core then automatically
+                // add in the parallel sort runners for comparison.
+                runners = new SortRunner[]{
+                            new MergesortRunner(),
+                            new QuicksortRunner(),
+                            new MultikeyRunner(),
                             new BurstsortRunner(),
                             new BurstsortThreadPoolRunner(),
                             new RedesignedBurstsortRunner(),
                             new RedesignedBurstsortThreadPoolRunner()
-                };
-            } else if (args[0].equals("--burstsort")) {
-                generators = new DataGenerator[] {
-                            new RandomGenerator(),
-                            new PsuedoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                };
-                sizes = DataSize.values();
-                runners = new SortRunner[] {
+                        };
+            } else {
+                // If only one CPU core, then don't bother with parallel tests.
+                runners = new SortRunner[]{
+                            new MergesortRunner(),
+                            new QuicksortRunner(),
+                            new MultikeyRunner(),
                             new BurstsortRunner(),
                             new RedesignedBurstsortRunner()
-                };
-            } else if (args[0].equals("--only-parallel-large")) {
-                generators = new DataGenerator[] {
+                        };
+            }
+            sizes = DataSize.values();
+        } else if (args.length == 1) {
+            if (args[0].equals("--burstsort")) {
+                generators = new DataGenerator[]{
                             new RandomGenerator(),
                             new PsuedoWordGenerator(),
                             new RepeatGenerator(),
                             new SmallAlphabetGenerator(),
                             new RepeatCycleGenerator(),
                             new GenomeGenerator()
-                };
-                sizes = new DataSize[]{DataSize.LARGE};
-                runners = new SortRunner[] {
-                            new BurstsortThreadPoolRunner(),
-                            new RedesignedBurstsortThreadPoolRunner()
-                };
+                        };
+                sizes = DataSize.values();
+                if (Runtime.getRuntime().availableProcessors() > 1) {
+                    // If there is more than one CPU core then automatically
+                    // add in the parallel sort runners for comparison.
+                    runners = new SortRunner[]{
+                                new BurstsortRunner(),
+                                new BurstsortThreadPoolRunner(),
+                                new RedesignedBurstsortRunner(),
+                                new RedesignedBurstsortThreadPoolRunner()
+                            };
+                } else {
+                    // If only one CPU core, then don't bother with parallel tests.
+                    runners = new SortRunner[]{
+                                new BurstsortRunner(),
+                                new RedesignedBurstsortRunner()
+                            };
+                }
             } else {
                 usage();
                 System.exit(1);
@@ -166,18 +163,28 @@ public class Benchmark {
                 System.err.format("File '%s' not found!\n", args[1]);
                 System.exit(1);
             }
-            generators = new DataGenerator[] {
+            generators = new DataGenerator[]{
                         new FileGenerator(file)
-            };
-            runners = new SortRunner[] {
-                        new MergesortRunner(),
-                        new QuicksortRunner(),
-                        new MultikeyRunner(),
-                        new BurstsortRunner(),
-                        new BurstsortThreadPoolRunner(),
-                        new RedesignedBurstsortRunner(),
-                        new RedesignedBurstsortThreadPoolRunner()
-            };
+                    };
+            if (Runtime.getRuntime().availableProcessors() > 1) {
+                runners = new SortRunner[]{
+                            new MergesortRunner(),
+                            new QuicksortRunner(),
+                            new MultikeyRunner(),
+                            new BurstsortRunner(),
+                            new BurstsortThreadPoolRunner(),
+                            new RedesignedBurstsortRunner(),
+                            new RedesignedBurstsortThreadPoolRunner()
+                        };
+            } else {
+                runners = new SortRunner[]{
+                            new MergesortRunner(),
+                            new QuicksortRunner(),
+                            new MultikeyRunner(),
+                            new BurstsortRunner(),
+                            new RedesignedBurstsortRunner()
+                        };
+            }
         } else {
             usage();
             System.exit(1);
@@ -194,13 +201,13 @@ public class Benchmark {
      */
     private static void usage() {
         System.out.println("Usage: Benchmark [<options>]|[--1|--2|--3 <file>]");
-        System.out.println("\t--burstsort: run only the single-threaded burstsort tests.");
-        System.out.println("\t--parallel: run only burstsort tests, both single and multithreaded.");
-        System.out.println("\t--only-parallel-large: run only parallel sorts with large data");
+        System.out.println("\t--burstsort: run only the burstsort tests, with the multi-threaded");
+        System.out.println("\t             versions if multiple CPU cores are present.");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
         System.out.println("\t--3: load 3m lines from file and benchmark.");
         System.out.println("\t\tFor the file benchmarks, all tests are run.");
+        System.out.println("\n\tWith no arguments, generates random data and runs all tests.");
     }
 
     /**
