@@ -248,7 +248,7 @@ public class Benchmark {
                             // in case the unit tests missed something.
                             for (int ii = 1; ii < arr.length; ii++) {
                                 if (arr[ii - 1].compareTo(arr[ii]) > 0) {
-                                    System.err.format("Sort %s failed!\n", runner.getDisplayName());
+                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
                                     System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
                                     System.exit(1);
                                 }
