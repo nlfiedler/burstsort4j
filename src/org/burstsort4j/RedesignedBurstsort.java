@@ -252,6 +252,7 @@ public class RedesignedBurstsort {
      */
     private static int traverseParallel(Node node, CharSequence[] strings,
             int pos, int deep, List<Callable<Object>> jobs) {
+        final int BIND_LIMIT = THRESHOLD / SUBBUCKET_THRESHOLD;
         for (char c = 0; c < ALPHABET; c++) {
             int count = node.size(c);
             if (count < 0) {
@@ -259,8 +260,47 @@ public class RedesignedBurstsort {
                         deep + 1, jobs);
             } else if (count > 0) {
                 Object[] bind = (Object[]) node.get(c);
-                jobs.add(new CopySortJob(bind, count, strings, pos, deep + 1));
-                pos += count;
+                // For the null bucket, copy the elements without sorting.
+                if (c == 0) {
+                    // If this bucket has a lot of entries, then split it up
+                    // into multiple jobs for better parallelism.
+                    if (bind.length > BIND_LIMIT) {
+                        int offset = 0;
+                        int remainder = bind.length % BIND_LIMIT;
+                        for (int j = bind.length / BIND_LIMIT; j > 0; j--) {
+                            int endoff = offset + BIND_LIMIT;
+                            if (remainder == 0 && j == 1) {
+                                // This is the end of the bucket, copy only
+                                // the number of elements stored therein.
+                                jobs.add(new CopySortJob(bind, offset, endoff,
+                                        count % THRESHOLD, strings, pos, -1));
+                                pos += count % THRESHOLD;
+                            } else {
+                                jobs.add(new CopySortJob(bind, offset, endoff,
+                                        THRESHOLD, strings, pos, -1));
+                                pos += THRESHOLD;
+                            }
+                            offset = endoff;
+                        }
+                        if (remainder > 0) {
+                            jobs.add(new CopySortJob(bind, offset, bind.length,
+                                    count % THRESHOLD, strings, pos, -1));
+                            pos += count % THRESHOLD;
+                        }
+                    } else {
+                        // Plain and simple copy job.
+                        jobs.add(new CopySortJob(bind, 0, bind.length, count,
+                                strings, pos, -1));
+                        pos += count;
+                    }
+                } else {
+                    // This bucket must be both copied and sorted so we
+                    // cannot break it into smaller chunks, but it should
+                    // already be less than the threshold size anyway.
+                    jobs.add(new CopySortJob(bind, 0, bind.length, count,
+                            strings, pos, deep + 1));
+                    pos += count;
+                }
             }
         }
         return pos;
@@ -461,6 +501,10 @@ public class RedesignedBurstsort {
         private volatile boolean completed;
         /** Bucket index to be copied. */
         private final Object[] bind;
+        /** Offset of first entry within bind to process. */
+        private final int bstart;
+        /** Offset of last entry within bind to process. */
+        private final int bend;
         /** The number of elements in the input array. */
         private final int count;
         /** The array to which the sorted strings are written. */
@@ -470,7 +514,8 @@ public class RedesignedBurstsort {
         private final int offset;
         /** The depth at which to sort the strings (i.e. the strings often
          * have a common prefix, and depth is the length of that prefix and
-         * thus the sort routines can ignore those characters). */
+         * thus the sort routines can ignore those characters).
+         * If this value is less than zero then no sorting is performed. */
         private final int depth;
 
         /**
@@ -478,16 +523,21 @@ public class RedesignedBurstsort {
          * input strings to the output array.
          *
          * @param  bind    index for bucket to be copied and sorted.
+         * @param  bstart  starting offset into bind.
+         * @param  bend    ending offset into bind.
          * @param  count   number of elements in the bucket structure.
          * @param  output  output array; only a subset should be modified.
          * @param  offset  offset within output array to which sorted
          *                 strings will be written.
          * @param  depth   number of charaters in strings to be ignored
-         *                 when sorting (i.e. the common prefix).
+         *                 when sorting (i.e. the common prefix), or -1
+         *                 if no sorting is to be performed.
          */
-        public CopySortJob(Object[] bind, int count, CharSequence[] output,
-                int offset, int depth) {
+        public CopySortJob(Object[] bind, int bstart, int bend, int count,
+                CharSequence[] output, int offset, int depth) {
             this.bind = bind;
+            this.bstart = bstart;
+            this.bend = bend;
             this.count = count;
             this.output = output;
             this.offset = offset;
@@ -509,11 +559,11 @@ public class RedesignedBurstsort {
             // destination. This is done for all node entries, even
             // the null bucket.
             int off = offset;
-            for (int j = 0; j < bind.length; /* see below */) {
+            for (int j = bstart; j < bend; /* see below */) {
                 CharSequence[] sub = (CharSequence[]) bind[j];
                 int limit = sub.length;
                 j++;
-                if (j == bind.length) {
+                if (j == bend) {
                     // Last sub-bucket may not be fully utilized.
                     int last = count % SUBBUCKET_THRESHOLD;
                     if (last > 0) {
@@ -523,7 +573,8 @@ public class RedesignedBurstsort {
                 System.arraycopy(sub, 0, output, off, limit);
                 off += limit;
             }
-            if (count > 0) {
+            // If depth is less than zero, then no sorting is needed.
+            if (count > 0 && depth >= 0) {
                 // Sort the strings that were just copied to the
                 // destination now that they are all in one array.
                 if (count > 1) {
