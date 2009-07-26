@@ -32,6 +32,10 @@ import static org.junit.Assert.*;
  * @author Nathan Fiedler
  */
 public class InsertionsortTest {
+    /** Maximum number of lines to test for any given file, which avoids
+     * spending far too much time testing insertion sort on data sets
+     * that it will never actually be called upon to sort in practice. */
+    private static final int MAX_LINES = 512;
 
     @Test
     public void testArguments() {
@@ -50,7 +54,7 @@ public class InsertionsortTest {
     @Test
     public void testComparable() {
         try {
-            List<String> data = Tests.loadData("dictwords", false, 256);
+            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length - 1);
@@ -64,7 +68,7 @@ public class InsertionsortTest {
             Insertionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
-            data = Tests.loadData("hamletwords", false, 256);
+            data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length - 1);
@@ -95,7 +99,7 @@ public class InsertionsortTest {
     @Test
     public void testStrings() {
         try {
-            List<String> data = Tests.loadData("dictwords", false, 256);
+            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length, 0);
@@ -109,7 +113,7 @@ public class InsertionsortTest {
             Insertionsort.sort(arr, 0, arr.length, 0);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
-            data = Tests.loadData("hamletwords", false, 256);
+            data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
             Insertionsort.sort(arr, 0, arr.length, 0);
