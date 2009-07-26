@@ -258,6 +258,10 @@ public class Burstsort {
                         } else {
                             no_elements_in_bucket = THRESHOLDMINUSONE;
                         }
+                        // Use a job for each sub-bucket to avoid handling
+                        // large numbers of entries in a single thread.
+                        // Note that this only works for the null buckets
+                        // which do not require any sorting of the entries.
                         jobs.add(new CopyJob(nullbucket, no_elements_in_bucket, strings, off));
                         off += no_elements_in_bucket;
                         nullbucket = (Object[]) nullbucket[no_elements_in_bucket];
