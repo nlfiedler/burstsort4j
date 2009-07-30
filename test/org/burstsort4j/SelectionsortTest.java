@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2009  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,27 +27,27 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Test the insertion sort implementations.
+ * Test the SelectionSort implementations.
  *
  * @author Nathan Fiedler
  */
-public class InsertionsortTest {
+public class SelectionsortTest {
     /** Maximum number of lines to test for any given file, which avoids
-     * spending far too much time testing insertion sort on data sets
+     * spending far too much time testing selection sort on data sets
      * that it will never actually be called upon to sort in practice. */
     private static final int MAX_LINES = 512;
 
     @Test
     public void testArguments() {
-        Insertionsort.sort((String[]) null, 0, 0);
-        Insertionsort.sort(new String[0], 0, 0);
+        Selectionsort.sort((String[]) null, 0, 0);
+        Selectionsort.sort(new String[0], 0, 0);
         String[] arr = new String[] { "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Selectionsort.sort(arr, 0, arr.length - 1);
         arr = new String[] { "b", "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Selectionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isSorted(arr));
         arr = new String[] { "c", "b", "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Selectionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -57,29 +57,29 @@ public class InsertionsortTest {
             List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Selectionsort.sort(arr, 0, arr.length - 1);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -87,57 +87,12 @@ public class InsertionsortTest {
         // Test with repeated strings.
         String[] arr = new String[16384];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Selectionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
         List<String> data = Tests.generateData(16384, 64);
         arr = data.toArray(new String[data.size()]);
-        Insertionsort.sort(arr, 0, arr.length - 1);
-        assertTrue(Tests.isSorted(arr));
-    }
-
-    @Test
-    public void testStrings() {
-        try {
-            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
-            Collections.shuffle(data);
-            String[] arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-            // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-            // Test with reverse sorted list
-            Collections.reverse(data);
-            arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-            // Test with non-unique word list.
-            data = Tests.loadData("hamletwords", false, MAX_LINES);
-            Collections.shuffle(data);
-            arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-            // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-            // Test with reverse sorted list
-            Collections.reverse(data);
-            arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length, 0);
-            assertTrue(Tests.isSorted(arr));
-        } catch (IOException ioe) {
-            fail(ioe.toString());
-        }
-        // Test with repeated strings.
-        String[] arr = new String[16384];
-        Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        Insertionsort.sort(arr, 0, arr.length, 0);
-        assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
-        // Test with randomly generated strings.
-        List<String> data = Tests.generateData(16384, 64);
-        arr = data.toArray(new String[data.size()]);
-        Insertionsort.sort(arr, 0, arr.length, 0);
+        Selectionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isSorted(arr));
     }
 }

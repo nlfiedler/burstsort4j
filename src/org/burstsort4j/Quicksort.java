@@ -44,9 +44,10 @@ public class Quicksort {
      * are sorted in place with constant additional memory (not counting
      * the stack due to recursion).
      *
+     * @param  <T>  type of comparable to be sorted.
      * @param  arr  an array of Comparable items to sort.
      */
-    public static void sort(Comparable[] arr) {
+    public static <T extends Comparable<? super T>> void sort(T[] arr) {
         if (arr != null && arr.length > 1) {
             sort(arr, 0, arr.length - 1);
         }
@@ -57,12 +58,12 @@ public class Quicksort {
      * Uses median-of-three partitioning and a cutoff at which
      * point insertion sort is used.
      *
+     * @param  <T>   type of comparable to be sorted.
      * @param  arr   an array of Comparable items.
      * @param  low   the left-most index of the subarray.
      * @param  high  the right-most index of the subarray.
      */
-    @SuppressWarnings("unchecked")
-    private static void sort(Comparable[] arr, int low, int high) {
+    private static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         if (low + 7 > high) {
             // Insertion sort for small partitions.
             Insertionsort.sort(arr, low, high);
@@ -82,7 +83,7 @@ public class Quicksort {
             // Place pivot element at the high end in preparation
             // for the ensuing swapping of elements.
             swap(arr, middle, high - 1);
-            Comparable pivot = arr[high - 1];
+            T pivot = arr[high - 1];
 
             // Order the elements such that those below the pivot
             // point appear earlier, and those higher than the pivot
