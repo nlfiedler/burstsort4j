@@ -26,7 +26,8 @@ package org.burstsort4j;
 public class Shellsort {
 
     /**
-     * Sort the input array using the shell sort algorithm.
+     * Sort the input array using the shell sort algorithm with the gap
+     * sequence suggested by Gonnet and Baeza-Yates.
      *
      * @param  <T>    type of comparable to be sorted.
      * @param  input  array of comparable objects to be sorted.
@@ -41,14 +42,14 @@ public class Shellsort {
             for (int ii = inc; ii < input.length; ii++) {
                 T temp = input[ii];
                 int jj = ii;
-                while ((jj >= inc) && (input[jj - inc].compareTo(temp) > 0)) {
+                while (jj >= inc && input[jj - inc].compareTo(temp) > 0) {
                     input[jj] = input[jj - inc];
-                    jj = jj - inc;
+                    jj -= inc;
                 }
                 input[jj] = temp;
             }
             // Another way of dividing by 2.2 to get an integer.
-            inc = inc * 5 / 11;
+            inc = inc == 2 ? 1 : inc * 5 / 11;
         }
     }
 }

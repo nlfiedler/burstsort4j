@@ -28,7 +28,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Unit tests for the Combsort class.
+ * Unit tests for the Shellsort class.
  *
  * @author Nathan Fiedler
  */
@@ -36,15 +36,33 @@ public class ShellsortTest {
 
     @Test
     public void testArguments() {
-        Combsort.sort((String[]) null);
-        Combsort.sort(new String[0]);
+        Shellsort.sort((String[]) null);
+        Shellsort.sort(new String[0]);
         String[] arr = new String[] { "a" };
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
         arr = new String[] { "b", "a" };
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
         arr = new String[] { "c", "b", "a" };
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
+    public void testSmallSize() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            data = data.subList(0, 10);
+            String[] arr = data.toArray(new String[data.size()]);
+            Shellsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+        List<String> data = Tests.generateData(10, 100);
+        String[] arr = data.toArray(new String[data.size()]);
+        Shellsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -54,7 +72,7 @@ public class ShellsortTest {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Combsort.sort(arr);
+            Shellsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -67,7 +85,7 @@ public class ShellsortTest {
             List<String> data = Tests.loadData();
             Collections.sort(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Combsort.sort(arr);
+            Shellsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -81,7 +99,7 @@ public class ShellsortTest {
             Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Combsort.sort(arr);
+            Shellsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -95,7 +113,7 @@ public class ShellsortTest {
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
                     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, STR);
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, STR));
     }
 
@@ -112,7 +130,7 @@ public class ShellsortTest {
             list.add(strs[i % strs.length]);
         }
         String[] arr = list.toArray(new String[list.size()]);
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -120,7 +138,7 @@ public class ShellsortTest {
     public void testRandom() {
         List<String> data = Tests.generateData(10000, 100);
         String[] arr = data.toArray(new String[data.size()]);
-        Combsort.sort(arr);
+        Shellsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -130,7 +148,7 @@ public class ShellsortTest {
             List<String> data = Tests.loadData("hamletwords");
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Combsort.sort(arr);
+            Shellsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -142,7 +160,7 @@ public class ShellsortTest {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);
             String[] arr = data.toArray(new String[data.size()]);
-            Combsort.sort(arr);
+            Shellsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
