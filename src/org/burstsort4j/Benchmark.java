@@ -514,7 +514,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Artificial A";
+            return "Repeated 100-A";
         }
     }
 
@@ -542,7 +542,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Artificial C";
+            return "Repeated 100-A decreasing cycle";
         }
     }
 
