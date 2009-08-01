@@ -26,17 +26,6 @@ package org.burstsort4j;
  */
 public class Insertionsort {
 
-//    public static void sort(int[] A) {
-//        int a, j;
-//        for (int i = 1; i < A.length; i++) {
-//            a = A[i];
-//            for (j = i - 1; j >= 0 && A[j] > a; j--) {
-//                A[j + 1] = A[j];
-//            }
-//            A[j + 1] = a;
-//        }
-//    }
-
     /**
      * Sort the array of comparables within the given range of elements.
      * Uses a simple insertion sort algorithm, so expect O(n^2) running

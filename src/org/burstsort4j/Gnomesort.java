@@ -25,30 +25,6 @@ package org.burstsort4j;
  */
 public class Gnomesort {
 
-//    public static void sort(int[] input) {
-//        if (input == null || input.length == 0) {
-//            return;
-//        }
-//        int i = 1;
-//        int j = 2;
-//        while (i < input.length) {
-//            if (input[i - 1] <= input[i]) {
-//                i = j;
-//                j = j + 1;
-//            } else {
-//                // swap a[i-1] and a[i]
-//                int t = input[i - 1];
-//                input[i - 1] = input[i];
-//                input[i] = t;
-//                i = i - 1;
-//                if (i == 0) {
-//                    i = j;
-//                    j = j + 1;
-//                }
-//            }
-//        }
-//    }
-
     /**
      * Sort the input array using the Gnome sort algorithm.
      *  O(n^2) running time.

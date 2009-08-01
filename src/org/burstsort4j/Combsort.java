@@ -30,47 +30,6 @@ public class Combsort {
      * Sort the input array using the Combsort11 algorithm.
      * Purportedly O(n*logn) running time.
      *
-     * @param  input  array of integers to be sorted.
-     */
-//    public static void sort(int[] input) {
-//        if (input == null || input.length == 0) {
-//            return;
-//        }
-//
-//        int gap = input.length; //initialize gap size
-//        boolean swapped = false;
-//
-//        while (gap > 0 && swapped) {
-//            // Update the gap value for the next comb.
-//            if (gap > 1) {
-//                gap = (int) (gap / 1.3);
-//                if (gap == 10 || gap == 9) {
-//                    gap = 11;
-//                }
-//            }
-//
-//            int i = 0;
-//            swapped = false; //see bubblesort for an explanation
-//
-//            // a single "comb" over the input list
-//            while (i + gap < input.length) { // see shellsort for similar idea
-//                if (input[i] > input[i + gap]) {
-//                    // swap(input[i], input[i+gap])
-//                    int t = input[i];
-//                    input[i] = input[i + gap];
-//                    input[i + gap] = t;
-//                    // Signal that the list is not guaranteed sorted.
-//                    swapped = true;
-//                }
-//                i++;
-//            }
-//        }
-//    }
-
-    /**
-     * Sort the input array using the Combsort11 algorithm.
-     * Purportedly O(n*logn) running time.
-     *
      * @param  <T>    type of comparable to be sorted.
      * @param  input  array of comparable objects to be sorted.
      */
