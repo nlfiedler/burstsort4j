@@ -31,6 +31,9 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class Quicksort {
+    /** As with GCC std::sort delegate to insertion sort for ranges of
+     * size below 16. */
+    private static final int THRESHOLD = 16;
 
     /**
      * Creates a new instance of Quicksort.
@@ -64,7 +67,7 @@ public class Quicksort {
      * @param  high  the right-most index of the subarray.
      */
     private static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
-        if (low + 7 > high) {
+        if (low + THRESHOLD > high) {
             // Insertion sort for small partitions.
             Insertionsort.sort(arr, low, high);
         } else {

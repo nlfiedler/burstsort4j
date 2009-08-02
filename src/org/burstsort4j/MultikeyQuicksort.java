@@ -28,6 +28,9 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class MultikeyQuicksort {
+    /** As with GCC std::sort delegate to insertion sort for ranges of
+     * size below 16. */
+    private static final int THRESHOLD = 16;
 
     /**
      * Creates a new instance of MultikeyQuicksort.
@@ -49,19 +52,6 @@ public class MultikeyQuicksort {
     }
 
     /**
-     * Method to swap to elements in an array.
-     *
-     * @param  a  an array of objects.
-     * @param  x  the index of the first object.
-     * @param  y  the index of the second object.
-     */
-    private static final void swap(Object[] a, int x, int y) {
-        Object tmp = a[x];
-        a[x] = a[y];
-        a[y] = tmp;
-    }
-
-    /**
      * Swap the elements between to subarrays.
      *
      * @param  a  the array of elements.
@@ -71,7 +61,11 @@ public class MultikeyQuicksort {
      */
     private static void vecswap(Object[] a, int i, int j, int n) {
         while (n-- > 0) {
-            swap(a, i++, j++);
+            Object t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+            i++;
+            j++;
         }
     }
 
@@ -145,7 +139,7 @@ public class MultikeyQuicksort {
      * @param  depth    the zero-based offset into the strings.
      */
     private static void ssort(CharSequence[] a, int base, int n, int depth) {
-        if (n < 8) {
+        if (n < THRESHOLD) {
             Insertionsort.sort(a, base, base + n, depth);
             return;
         }
@@ -161,7 +155,9 @@ public class MultikeyQuicksort {
             pn = med3(a, base + n - 1 - 2 * d, base + n - 1 - d, pn, depth);
         }
         pm = med3(a, pl, pm, pn, depth);
-        swap(a, base, pm);
+        CharSequence t = a[base];
+        a[base] = a[pm];
+        a[pm] = t;
         int v = charAt(a[base], depth);
         boolean allzeros = v == 0;
         int le = base + 1, lt = le;
@@ -169,14 +165,20 @@ public class MultikeyQuicksort {
         while (true) {
             for (; lt <= gt && (r = charAt(a[lt], depth) - v) <= 0; lt++) {
                 if (r == 0) {
-                    swap(a, le++, lt);
+                    t = a[le];
+                    a[le] = a[lt];
+                    a[lt] = t;
+                    le++;
                 } else {
                     allzeros = false;
                 }
             }
             for (; lt <= gt && (r = charAt(a[gt], depth) - v) >= 0; gt--) {
                 if (r == 0) {
-                    swap(a, gt, ge--);
+                    t = a[gt];
+                    a[gt] = a[ge];
+                    a[ge] = t;
+                    ge--;
                 } else {
                     allzeros = false;
                 }
@@ -184,7 +186,11 @@ public class MultikeyQuicksort {
             if (lt > gt) {
                 break;
             }
-            swap(a, lt++, gt--);
+            t = a[lt];
+            a[lt] = a[gt];
+            a[gt] = t;
+            lt++;
+            gt--;
         }
         pn = base + n;
         r = Math.min(le - base, lt - le);
