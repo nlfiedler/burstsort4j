@@ -211,11 +211,7 @@ public class Burstsort {
                     // Sort the tail string bucket.
                     CharSequence[] bucket = (CharSequence[]) node.get(c);
                     if (count > 1) {
-                        if (count < 20) {
-                            Insertionsort.sort(bucket, 0, count, deep + 1);
-                        } else {
-                            MultikeyQuicksort.sort(bucket, 0, count, deep + 1);
-                        }
+                        MultikeyQuicksort.sort(bucket, 0, count, deep + 1);
                     }
                     // Copy to final destination.
                     System.arraycopy(bucket, 0, strings, off, count);
@@ -581,11 +577,7 @@ public class Burstsort {
             if (count > 0) {
                 if (count > 1) {
                     // Sort the strings from the bucket.
-                    if (count < 20) {
-                        Insertionsort.sort(input, 0, count, depth);
-                    } else {
-                        MultikeyQuicksort.sort(input, 0, count, depth);
-                    }
+                    MultikeyQuicksort.sort(input, 0, count, depth);
                 }
                 // Copy the sorted strings to the destination array.
                 System.arraycopy(input, 0, output, offset, count);

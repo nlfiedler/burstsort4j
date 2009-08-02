@@ -227,11 +227,7 @@ public class RedesignedBurstsort {
                     // destination now that they are all in one array.
                     if (count > 1) {
                         int high = pos + count;
-                        if (count < 20) {
-                            Insertionsort.sort(strings, pos, high, deep + 1);
-                        } else {
-                            MultikeyQuicksort.sort(strings, pos, high, deep + 1);
-                        }
+                        MultikeyQuicksort.sort(strings, pos, high, deep + 1);
                     }
                 }
                 pos += count;
@@ -579,11 +575,7 @@ public class RedesignedBurstsort {
                 // destination now that they are all in one array.
                 if (count > 1) {
                     int high = offset + count;
-                    if (count < 20) {
-                        Insertionsort.sort(output, offset, high, depth);
-                    } else {
-                        MultikeyQuicksort.sort(output, offset, high, depth);
-                    }
+                    MultikeyQuicksort.sort(output, offset, high, depth);
                 }
             }
             completed = true;
