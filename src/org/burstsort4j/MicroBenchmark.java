@@ -33,10 +33,11 @@ import java.util.Random;
 public class MicroBenchmark {
     /** Size of the data sets used in testing sort performance. */
     private static enum DataSize {
-        TINY    (10, 100000),
-        SMALL   (50,  20000),
-        MEDIUM (100,  10000),
-        LARGE  (500,   2000);
+        N_10   (10, 100000),
+        N_20   (20,  50000),
+        N_50   (50,  20000),
+        N_100 (100,  10000),
+        N_400 (400,   2500);
         /** The quantity for this data size. */
         private final int value;
         /** Number of times to run this particular test. */
@@ -89,13 +90,16 @@ public class MicroBenchmark {
                     new RandomGenerator(),
                     new PsuedoWordGenerator(),
                     new RepeatGenerator(),
-                    new RepeatCycleGenerator()
+                    new SmallAlphabetGenerator(),
+                    new RepeatCycleGenerator(),
+                    new GenomeGenerator()
                 };
         SortRunner[] runners = new SortRunner[]{
                     new CombsortRunner(),
                     new GnomesortRunner(),
                     new HeapsortRunner(),
                     new InsertionsortRunner(),
+                    new QuicksortRunner(),
                     new SelectionsortRunner(),
                     new ShellsortRunner()
                 };
@@ -122,8 +126,9 @@ public class MicroBenchmark {
         // Warm up the JVM so that the classes get compiled and the
         // CPU comes up to full speed.
         System.out.println("Warming up the system, please wait...");
+        DataSize[] all_sizes = DataSize.values();
         for (DataGenerator generator : generators) {
-            List<String> data = generator.generate(DataSize.LARGE);
+            List<String> data = generator.generate(all_sizes[all_sizes.length - 1]);
             for (SortRunner runner : runners) {
                 String[] arr = data.toArray(new String[data.size()]);
                 runner.sort(arr);
@@ -334,6 +339,86 @@ public class MicroBenchmark {
     }
 
     /**
+     * Generates a set of strings, comprised of one to 100 characters,
+     * from an alphabet consisting of nine letters. One of three
+     * pathological cases to stress test the sort.
+     */
+    private static class SmallAlphabetGenerator implements DataGenerator {
+        /** Longest string to be created. */
+        private static final int LONGEST = 100;
+        /** Small alphabet size. */
+        private static final int ALPHABET = 9;
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            int count = size.getValue();
+            Random r = new Random();
+            List<String> list = new ArrayList<String>();
+            StringBuilder sb = new StringBuilder();
+            for (int ii = 0; ii < count; ii++) {
+                int length = r.nextInt(LONGEST) + 1;
+                for (int jj = 0; jj < length; jj++) {
+                    int d = r.nextInt(ALPHABET);
+                    sb.append((char) ('a' + d));
+                }
+                list.add(sb.toString());
+                sb.setLength(0);
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Small Alphabet";
+        }
+    }
+
+    /**
+     * Generates strings of a fixed length, comprised of randomly selected
+     * characters from the genome alphabet.
+     */
+    private static class GenomeGenerator implements DataGenerator {
+        /** Size of the randomly generated strings. */
+        private static final int LENGTH = 9;
+        /** Size of the genome alphabet (a, c, g, t). */
+        private static final int ALPHABET = 4;
+
+        @Override
+        public List<String> generate(DataSize size) throws GeneratorException {
+            int count = size.getValue();
+            Random r = new Random();
+            List<String> list = new ArrayList<String>();
+            StringBuilder sb = new StringBuilder();
+            for (int ii = 0; ii < count; ii++) {
+                for (int jj = 0; jj < LENGTH; jj++) {
+                    switch (r.nextInt(ALPHABET)) {
+                        case 0:
+                            sb.append('a');
+                            break;
+                        case 1:
+                            sb.append('c');
+                            break;
+                        case 2:
+                            sb.append('g');
+                            break;
+                        case 3:
+                            sb.append('t');
+                            break;
+                    }
+                }
+                list.add(sb.toString());
+                sb.setLength(0);
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Genome";
+        }
+    }
+
+    /**
      * Runs a particular sort implementation.
      */
     private static interface SortRunner {
@@ -402,6 +487,19 @@ public class MicroBenchmark {
         @Override
         public void sort(String[] data) {
             Insertionsort.sort(data, 0, data.length - 1);
+        }
+    }
+
+    private static class QuicksortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "Quicksort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            Quicksort.sort(data);
         }
     }
 
