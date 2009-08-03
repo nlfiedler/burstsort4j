@@ -19,15 +19,15 @@
 package org.burstsort4j;
 
 /**
- * Binary heap sort implementation from code codex web site.
+ * Binary heap sort implementation based on psuedocode from Wikipedia.
  *
  * @author  Nathan Fiedler
  */
 public class Heapsort {
 
     /**
-     * Sort the input array using the Combsort11 algorithm.
-     * Purportedly O(n*logn) running time.
+     * Sort the input array using the heap sort algorithm.
+     * O(n*logn) running time with constant extra space.
      *
      * @param  <T>    type of comparable to be sorted.
      * @param  input  array of comparable objects to be sorted.
@@ -37,44 +37,68 @@ public class Heapsort {
             return;
         }
 
-        // Build the binary heap.
-        for (int child = 1; child < input.length; child++) {
-            int parent = (child - 1) / 2;
-            while (parent >= 0 && input[parent].compareTo(input[child]) < 0) {
-                T temp = input[parent];
-                input[parent] = input[child];
-                input[child] = temp;
-                child = parent;
-                parent = (child - 1) / 2;
-            }
-        }
-
-        // Shrink the heap to sort the contents.
-        for (int n = input.length - 1; n >= 0; n--) {
-            T temp = input[0];
-            input[0] = input[n];
-            input[n] = temp;
-            int parent = 0;
-            while (true) {
-                int leftChild = 2 * parent + 1;
-                if (leftChild >= n) {
-                    // no more children
-                    break;
+        // start is assigned the index in a of the last parent node
+        for (int start = (input.length - 2) / 2; start >= 0; start--) {
+            // sift down the node at index start to the proper place such
+            // that all nodes below the start index are in heap order
+            int root = start;
+            // While the root has at least one child
+            while (root * 2 + 1 < input.length) {
+                // root*2+1 points to the left child
+                int child = root * 2 + 1;
+                // If the child has a sibling and the child's value
+                // is less than its sibling's...
+                if ((child + 1 < input.length) &&
+                        input[child].compareTo(input[child + 1]) < 0) {
+                    // ... then point to the right child instead
+                    child++;
                 }
-                int rightChild = leftChild + 1;
-                int maxChild = leftChild;
-                if (rightChild < n && input[leftChild].compareTo(input[rightChild]) < 0) {
-                    maxChild = rightChild;
-                }
-                if (input[parent].compareTo(input[maxChild]) < 0) {
-                    temp = input[parent];
-                    input[parent] = input[maxChild];
-                    input[maxChild] = temp;
-                    parent = maxChild;
+                // out of max-heap order
+                if (input[root].compareTo(input[child]) < 0) {
+                    T temp = input[root];
+                    input[root] = input[child];
+                    input[child] = temp;
+                    // repeat to continue sifting down the child now
+                    root = child;
                 } else {
                     break;
                 }
             }
+        }
+        // after sifting down the root all nodes/elements are in heap order
+
+        for (int end = input.length - 1; end > 0; end--) {
+            // swap the root (maximum value) of the heap with the last
+            // element of the heap
+            T temp = input[end];
+            input[end] = input[0];
+            input[0] = temp;
+            // put the heap back in max-heap order
+            int root = 0;
+            // While the root has at least one child
+            while (root * 2 + 1 < end) {
+                // root*2+1 points to the left child
+                int child = root * 2 + 1;
+                // If the child has a sibling and the child's value is
+                // less than its sibling's...
+                if ((child + 1 < end) &&
+                        input[child].compareTo(input[child + 1]) < 0) {
+                    // ... then point to the right child instead
+                    child++;
+                }
+                // out of max-heap order
+                if (input[root].compareTo(input[child]) < 0) {
+                    temp = input[root];
+                    input[root] = input[child];
+                    input[child] = temp;
+                    // repeat to continue sifting down the child now
+                    root = child;
+                } else {
+                    break;
+                }
+            }
+            // end of for loop decreases the size of the heap by one so that
+            // the previous max value will stay in its proper placement
         }
     }
 }
