@@ -49,6 +49,24 @@ public class HeapsortTest {
     }
 
     @Test
+    public void testSmallSize() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            data = data.subList(0, 10);
+            String[] arr = data.toArray(new String[data.size()]);
+            Heapsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+        List<String> data = Tests.generateData(10, 100);
+        String[] arr = data.toArray(new String[data.size()]);
+        Heapsort.sort(arr);
+        assertTrue(Tests.isSorted(arr));
+    }
+
+    @Test
     public void testDictWords() {
         try {
             List<String> data = Tests.loadData();
