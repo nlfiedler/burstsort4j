@@ -95,6 +95,7 @@ public class MicroBenchmark {
                     new GenomeGenerator()
                 };
         SortRunner[] runners = new SortRunner[]{
+                    new BubblesortRunner(),
                     new CombsortRunner(),
                     new GnomesortRunner(),
                     new HeapsortRunner(),
@@ -436,6 +437,19 @@ public class MicroBenchmark {
          * @param  data  strings to be sorted.
          */
         void sort(String[] data);
+    }
+
+    private static class BubblesortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "Bubblesort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            Bubblesort.sort(data);
+        }
     }
 
     private static class CombsortRunner implements SortRunner {
