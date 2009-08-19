@@ -64,8 +64,26 @@ public class LazyFunnelsort {
                 // Copy remainder of last stream to output.
                 System.arraycopy(d[0], di[0], output, offset, d[0].length - di[0]);
                 d = new String[0][];
-//            } else if (d.length == 2) {
-//                // TODO: just two streams, do the usual merge
+            } else if (d.length == 2) {
+                // With only two streams, perform a faster merge.
+                String[] a = d[0];
+                String[] b = d[1];
+                int i = di[0];
+                int j = di[1];
+                while (i < a.length && j < b.length) {
+                    if (a[i].compareTo(b[j]) < 0) {
+                        output[offset++] = a[i++];
+                    } else {
+                        output[offset++] = b[j++];
+                    }
+                }
+                if (i < a.length) {
+                    System.arraycopy(a, i, output, offset, a.length - i);
+                }
+                if (j < b.length) {
+                    System.arraycopy(b, j, output, offset, b.length - j);
+                }
+                d = new String[0][];
             } else {
                 output[offset] = d[0][di[0]];
                 offset++;

@@ -35,38 +35,109 @@ import static org.junit.Assert.*;
 public class LazyFunnelsortTest {
 
     @Test
-    public void testInsertionMerge() {
+    public void test_InsertionMerge_Dictwords() {
         try {
-            // Read in a small set of strings for easy debugging.
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
-            data = data.subList(0, 20);
-            String[] arr = data.toArray(new String[data.size()]);
-            // Split into separate arrays and sort each of them.
-            String[] a1 = new String[5];
-            System.arraycopy(arr, 0, a1, 0, 5);
-            Arrays.sort(a1);
-            String[] a2 = new String[5];
-            System.arraycopy(arr, 5, a2, 0, 5);
-            Arrays.sort(a2);
-            String[] a3 = new String[5];
-            System.arraycopy(arr, 10, a3, 0, 5);
-            Arrays.sort(a3);
-            String[] a4 = new String[5];
-            System.arraycopy(arr, 15, a4, 0, 5);
-            Arrays.sort(a4);
-            // Set up the inputs for the insertion d-way merger.
-            List<String[]> inputs = new ArrayList<String[]>();
-            inputs.add(a1);
-            inputs.add(a2);
-            inputs.add(a3);
-            inputs.add(a4);
-            String[] output = new String[20];
-            // Test the merger.
-            LazyFunnelsort.insertionMerge(inputs, output, 0);
-            assertTrue(Tests.isSorted(output));
+            test_InsertionMerge(data);
         } catch (IOException ioe) {
             fail(ioe.toString());
+        }
+    }
+
+    @Test
+    public void test_InsertionMerge_Sorted() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.sort(data);
+            test_InsertionMerge(data);
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+    @Test
+    public void test_InsertionMerge_Reversed() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.sort(data);
+            Collections.reverse(data);
+            test_InsertionMerge(data);
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+    @Test
+    public void test_InsertionMerge_Repeated() {
+        String[] arr = new String[100];
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        Arrays.fill(arr, seed);
+        List<String> data = new ArrayList<String>();
+        for (String s : arr) {
+            data.add(s);
+        }
+        test_InsertionMerge(data);
+    }
+
+    @Test
+    public void test_InsertionMerge_RepeatedCycle() {
+        String[] strs = new String[100];
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        for (int i = 0, l = 1; i < strs.length; i++, l++) {
+            strs[i] = seed.substring(0, l);
+        }
+        List<String> data = new ArrayList<String>();
+        for (String s : strs) {
+            data.add(s);
+        }
+        test_InsertionMerge(data);
+    }
+
+    /**
+     * Tests the insertion d-way merge algorithm for correctness using
+     * the given data.
+     *
+     * @param  data  data to use for testing.
+     */
+    private void test_InsertionMerge(List<String> data) {
+        // Ensure data size is a multiple of four to make debugging easier.
+        data = data.subList(0, 100);
+        String[] arr = data.toArray(new String[data.size()]);
+        // Split into separate arrays and sort each of them.
+        int size = arr.length / 4;
+        String[] a1 = new String[size];
+        int offset = 0;
+        System.arraycopy(arr, offset, a1, 0, size);
+        offset += size;
+        Arrays.sort(a1);
+        String[] a2 = new String[size];
+        System.arraycopy(arr, offset, a2, 0, size);
+        offset += size;
+        Arrays.sort(a2);
+        String[] a3 = new String[size];
+        System.arraycopy(arr, offset, a3, 0, size);
+        offset += size;
+        Arrays.sort(a3);
+        String[] a4 = new String[size];
+        System.arraycopy(arr, offset, a4, 0, size);
+        offset += size;
+        Arrays.sort(a4);
+        // Set up the inputs for the insertion d-way merger.
+        List<String[]> inputs = new ArrayList<String[]>();
+        inputs.add(a1);
+        inputs.add(a2);
+        inputs.add(a3);
+        inputs.add(a4);
+        String[] output = new String[arr.length];
+        // Test the merger.
+        LazyFunnelsort.insertionMerge(inputs, output, 0);
+        assertTrue(Tests.isSorted(output));
+        Arrays.sort(arr);
+        for (int ii = 0; ii < arr.length; ii++) {
+            assertEquals(arr[ii], output[ii]);
         }
     }
 
