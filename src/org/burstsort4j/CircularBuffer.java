@@ -52,6 +52,42 @@ public class CircularBuffer<T> {
     }
 
     /**
+     * Constructs a new instance of CircularBuffer with the given data.
+     * The given array data will be copied to a new array to prevent
+     * accidental modification of the buffer.
+     *
+     * @param  initial  data to be stored in buffer initially.
+     */
+    public CircularBuffer(T[] initial) {
+        this(initial, true);
+    }
+
+    /**
+     * Constructs a new instance of CircularBuffer with the given data.
+     * All entries in the array are assumed to be valid data such that
+     * the buffer count will be equal to the length of the given array.
+     *
+     * <p>You may wish, for multi-thread safety, to have the data copied
+     * to a new array by passing <tt>true</tt> for the <em>copy</em>
+     * argument. Otherwise, for memory efficiency you can pass <tt>false</tt>
+     * and the given array will be used as the buffer. It is then your
+     * responsibility to prevent concurrent modifications to that array.</p>
+     *
+     * @param  initial  data to be stored in buffer initially.
+     * @param  copy     if true, data will be copied to a new array,
+     *                  otherwise the given array will be used as-is.
+     */
+    public CircularBuffer(T[] initial, boolean copy) {
+        if (copy) {
+            buffer = new Object[initial.length];
+            System.arraycopy(initial, 0, buffer, 0, initial.length);
+        } else {
+            buffer = initial;
+        }
+        count = buffer.length;
+    }
+
+    /**
      * Adds the given object to the buffer.
      *
      * @param  o  object to be added.
@@ -69,6 +105,41 @@ public class CircularBuffer<T> {
     }
 
     /**
+     * Drains the contents of the circular buffer into the given sink
+     * in an efficient manner (uses System.arraycopy). Copies the
+     * remaining elements of the circular buffer to the destination,
+     * leaving the buffer empty.
+     *
+     * @param  sink  destination for buffer contents.
+     */
+//    public void drain(CircularBuffer sink) {
+//        if (count == 0) {
+//            throw new IllegalStateException("buffer is empty");
+//        }
+//        if (sink.getCapacity() - sink.size() < count) {
+//            throw new IllegalStateException("sink too small");
+//        }
+//        Object[] output = sink.buffer;
+//        if (end <= start) {
+//            if (sink.end <= sink.start) {
+//                // Destination buffer wraps around.
+//                // TODO
+//            } else {
+//                // Buffer wraps around, must make two calls to arraycopy().
+//                int leading = buffer.length - start;
+//                System.arraycopy(buffer, start, output, sink.start, leading);
+//                System.arraycopy(buffer, 0, output, sink.start + leading, end);
+//            }
+//        } else {
+//            // Buffer is in one contiguous region.
+//            System.arraycopy(buffer, start, output, offset, end - start);
+//        }
+//        start = 0;
+//        end = 0;
+//        count = 0;
+//    }
+
+    /**
      * Drains the contents of the circular buffer into the given output
      * array in an efficient manner (uses System.arraycopy). Copies the
      * remaining elements of the circular buffer to the destination,
@@ -80,6 +151,9 @@ public class CircularBuffer<T> {
     public void drain(T[] output, int offset) {
         if (count == 0) {
             throw new IllegalStateException("buffer is empty");
+        }
+        if (output.length - offset < count) {
+            throw new IllegalStateException("destination too small");
         }
         if (end <= start) {
             // Buffer wraps around, must make two calls to arraycopy().
