@@ -70,7 +70,7 @@ public class LazyFunnelsortTest {
 
     @Test
     public void test_InsertionMerge_Repeated() {
-        String[] arr = new String[100];
+        String[] arr = new String[25000];
         String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
                     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, seed);
@@ -90,8 +90,8 @@ public class LazyFunnelsortTest {
             strs[i] = seed.substring(0, l);
         }
         List<String> data = new ArrayList<String>();
-        for (String s : strs) {
-            data.add(s);
+        for (int c = 25000, i = 0; c > 0; i++, c--) {
+            data.add(strs[i % strs.length]);
         }
         test_InsertionMerge(data);
     }
@@ -104,7 +104,12 @@ public class LazyFunnelsortTest {
      */
     private void test_InsertionMerge(List<String> data) {
         // Ensure data size is a multiple of four to make debugging easier.
-        data = data.subList(0, 100);
+        if (data.size() < 25000) {
+            throw new IllegalArgumentException("input too small");
+        }
+        if (data.size() > 25000) {
+            data = data.subList(0, 25000);
+        }
         String[] arr = data.toArray(new String[data.size()]);
         // Split into separate arrays and sort each of them.
         int size = arr.length / 4;
@@ -126,18 +131,20 @@ public class LazyFunnelsortTest {
         offset += size;
         Arrays.sort(a4);
         // Set up the inputs for the insertion d-way merger.
-        List<String[]> inputs = new ArrayList<String[]>();
-        inputs.add(a1);
-        inputs.add(a2);
-        inputs.add(a3);
-        inputs.add(a4);
-        String[] output = new String[arr.length];
+        List<CircularBuffer<String>> inputs = new ArrayList<CircularBuffer<String>>();
+        inputs.add(new CircularBuffer<String>(a1, false));
+        inputs.add(new CircularBuffer<String>(a2, false));
+        inputs.add(new CircularBuffer<String>(a3, false));
+        inputs.add(new CircularBuffer<String>(a4, false));
+        CircularBuffer<String> output = new CircularBuffer<String>(arr.length);
         // Test the merger.
-        LazyFunnelsort.insertionMerge(inputs, output, 0);
-        assertTrue(Tests.isSorted(output));
+        LazyFunnelsort.insertionMerge(inputs, output);
+        String[] results = new String[arr.length];
+        output.drain(results, 0);
+        assertTrue(Tests.isSorted(results));
         Arrays.sort(arr);
         for (int ii = 0; ii < arr.length; ii++) {
-            assertEquals(arr[ii], output[ii]);
+            assertEquals(arr[ii], results[ii]);
         }
     }
 

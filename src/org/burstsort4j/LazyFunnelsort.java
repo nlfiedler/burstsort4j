@@ -30,28 +30,24 @@ import java.util.List;
 public class LazyFunnelsort {
 
     /**
-     * Merges the given list of arrays into a single array using an
+     * Merges the given list of buffers into a single buffer using an
      * insertion d-way merge as described by Moruz and Brodal in WADS05.
      *
-     * @param  inputs  list of arrays to be merged.
+     * @param  inputs  list of buffers to be merged.
      * @param  output  where merged results are stored.
-     * @param  offset  starting position in output.
      */
-    public static void insertionMerge(List<String[]> inputs, String[] output, int offset) {
-// TODO: change all arrays to circular buffers
-        // Set up the array (d) of inputs and indices within those inputs.
-        String[][] d = new String[inputs.size()][];
-        int[] di = new int[d.length];
-        for (int i = 0; i < di.length; i++) {
-            d[i] = inputs.get(i);
-            di[i] = 0;
-        }
+    @SuppressWarnings("unchecked")
+    public static void insertionMerge(List<CircularBuffer<String>> inputs,
+            CircularBuffer<String> output) {
+        // Set up the array (d) of input buffers.
+        CircularBuffer<String>[] d = new CircularBuffer[inputs.size()];
+        d = inputs.toArray(d);
 
-        // Perform an insertion sort of the streams using the leading values.
+        // Perform an insertion sort of the buffers using the leading values.
         for (int i = 1; i < d.length; i++) {
-            String[] tmp = d[i];
+            CircularBuffer<String> tmp = d[i];
             int j = i;
-            while (j > 0 && tmp[0].compareTo(d[j - 1][0]) < 0) {
+            while (j > 0 && tmp.peek().compareTo(d[j - 1].peek()) < 0) {
                 d[j] = d[j - 1];
                 j--;
             }
@@ -62,53 +58,43 @@ public class LazyFunnelsort {
         while (d.length > 0) {
             if (d.length == 1) {
                 // Copy remainder of last stream to output.
-                System.arraycopy(d[0], di[0], output, offset, d[0].length - di[0]);
-                d = new String[0][];
+                d[0].drain(output);
+                d = new CircularBuffer[0];
             } else if (d.length == 2) {
                 // With only two streams, perform a faster merge.
-                String[] a = d[0];
-                String[] b = d[1];
-                int i = di[0];
-                int j = di[1];
-                while (i < a.length && j < b.length) {
-                    if (a[i].compareTo(b[j]) < 0) {
-                        output[offset++] = a[i++];
+                CircularBuffer<String> a = d[0];
+                CircularBuffer<String> b = d[1];
+                while (!a.isEmpty() && !b.isEmpty()) {
+                    if (a.peek().compareTo(b.peek()) < 0) {
+                        output.add(a.remove());
                     } else {
-                        output[offset++] = b[j++];
+                        output.add(b.remove());
                     }
                 }
-                if (i < a.length) {
-                    System.arraycopy(a, i, output, offset, a.length - i);
+                if (!a.isEmpty()) {
+                    a.drain(output);
                 }
-                if (j < b.length) {
-                    System.arraycopy(b, j, output, offset, b.length - j);
+                if (!b.isEmpty()) {
+                    b.drain(output);
                 }
-                d = new String[0][];
+                d = new CircularBuffer[0];
             } else {
-                output[offset] = d[0][di[0]];
-                offset++;
-                di[0]++;
-                if (di[0] == d[0].length) {
+                output.add(d[0].remove());
+                if (d[0].isEmpty()) {
                     // This stream has been exhausted, remove it from the pool.
-                    String[][] td = new String[d.length - 1][];
+                    CircularBuffer[] td = new CircularBuffer[d.length - 1];
                     System.arraycopy(d, 1, td, 0, td.length);
-                    int[] tdi = new int[di.length - 1];
-                    System.arraycopy(di, 1, tdi, 0, tdi.length);
                     d = td;
-                    di = tdi;
                 } else {
-                    // Insert new candidate into correct position in d,
-                    // keeping the indices in di in corresponding order.
-                    String[] t = d[0];
-                    int ti = di[0];
+                    // Insert new candidate into correct position in d.
+                    CircularBuffer<String> t = d[0];
+                    String s = t.peek();
                     int j = 1;
-                    while (j < d.length && t[ti].compareTo(d[j][di[j]]) > 0) {
+                    while (j < d.length && s.compareTo(d[j].peek()) > 0) {
                         d[j - 1] = d[j];
-                        di[j - 1] = di[j];
                         j++;
                     }
                     d[j - 1] = t;
-                    di[j - 1] = ti;
                 }
             }
         }
