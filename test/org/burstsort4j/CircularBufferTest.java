@@ -102,6 +102,24 @@ public class CircularBufferTest {
         assertTrue(instance.isEmpty());
         assertFalse(instance.isFull());
         assertEquals(0, instance.size());
+
+        data = new Integer[20];
+        for (int i = 1; i <= data.length; i++) {
+            data[i - 1] = new Integer(i);
+        }
+        instance = new CircularBuffer<Integer>(data, 4, 10, false);
+        assertFalse(instance.isEmpty());
+        assertTrue(instance.isFull());
+        assertEquals(10, instance.size());
+        assertEquals(10, instance.getCapacity());
+        for (int i = 5; !instance.isEmpty(); i++) {
+            Integer v = instance.remove();
+            assertEquals(i, v.intValue());
+        }
+        assertTrue(instance.isEmpty());
+        assertFalse(instance.isFull());
+        assertEquals(0, instance.size());
+        assertEquals(10, instance.getCapacity());
     }
 
     @Test

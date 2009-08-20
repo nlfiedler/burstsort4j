@@ -34,6 +34,10 @@ package org.burstsort4j;
 public class CircularBuffer<T> {
     /** The circular buffer. */
     private final Object[] buffer;
+    /** Lowest usable position within the buffer. */
+    private final int lower;
+    /** Highest usable position within the buffer. */
+    private final int upper;
     /** Offset of the first entry in the buffer. */
     private int start;
     /** Offset of the last entry in the buffer. */
@@ -49,6 +53,8 @@ public class CircularBuffer<T> {
      */
     public CircularBuffer(int capacity) {
         buffer = new Object[capacity];
+        lower = 0;
+        upper = capacity;
     }
 
     /**
@@ -67,24 +73,38 @@ public class CircularBuffer<T> {
      * All entries in the array are assumed to be valid data such that
      * the buffer count will be equal to the length of the given array.
      *
-     * <p>You may wish, for multi-thread safety, to have the data copied
-     * to a new array by passing <tt>true</tt> for the <em>copy</em>
-     * argument. Otherwise, for memory efficiency you can pass <tt>false</tt>
-     * and the given array will be used as the buffer. It is then your
-     * responsibility to prevent concurrent modifications to that array.</p>
-     *
      * @param  initial  data to be stored in buffer initially.
      * @param  copy     if true, data will be copied to a new array,
      *                  otherwise the given array will be used as-is.
      */
     public CircularBuffer(T[] initial, boolean copy) {
+        this(initial, 0, initial.length, copy);
+    }
+
+    /**
+     * Constructs a new instance of CircularBuffer with the given data.
+     * The entries in the array from the offset up to <tt>offset + count</tt>
+     * are assumed to be valid data such that the buffer count will be equal
+     * to the count argument.
+     *
+     * @param  initial  data to be stored in buffer initially.
+     * @param  offset   first offset within array to be used.
+     * @param  count    number of elements from offset to be used.
+     * @param  copy     if true, data will be copied to a new array,
+     *                  otherwise the given array will be used as-is.
+     */
+    public CircularBuffer(T[] initial, int offset, int count, boolean copy) {
         if (copy) {
-            buffer = new Object[initial.length];
-            System.arraycopy(initial, 0, buffer, 0, initial.length);
+            buffer = new Object[count];
+            System.arraycopy(initial, offset, buffer, 0, count);
         } else {
             buffer = initial;
         }
-        count = buffer.length;
+        this.count = count;
+        lower = offset;
+        upper = offset + count;
+        start = lower;
+        end = lower;
     }
 
     /**
@@ -93,14 +113,14 @@ public class CircularBuffer<T> {
      * @param  o  object to be added.
      */
     public void add(T o) {
-        if (count == buffer.length) {
+        if (count == upper - lower) {
             throw new IllegalStateException("buffer is full");
         }
         count++;
         buffer[end] = o;
         end++;
-        if (end == buffer.length) {
-            end = 0;
+        if (end == upper) {
+            end = lower;
         }
     }
 
@@ -116,59 +136,59 @@ public class CircularBuffer<T> {
         if (count == 0) {
             throw new IllegalStateException("buffer is empty");
         }
-        if (sink.buffer.length - sink.count < count) {
+        if (sink.upper - sink.lower - sink.count < count) {
             throw new IllegalArgumentException("sink too small");
         }
         Object[] output = sink.buffer;
         if (end <= start) {
             // Source buffer is not contiguous.
-            if (sink.buffer.length - sink.end < count) {
+            if (sink.upper - sink.end < count) {
                 // Destination buffer will wrap around after this call.
-                int tocopy = buffer.length - start;
-                int willfit = sink.buffer.length - sink.end;
+                int tocopy = upper - start;
+                int willfit = sink.upper - sink.end;
                 if (tocopy == willfit) {
-                    // Source buffer regions map directly onto open regions
+                    // Source buffer regions map directly onto free regions
                     // of sink buffer.
                     System.arraycopy(buffer, start, output, sink.end, tocopy);
-                    System.arraycopy(buffer, 0, output, 0, end);
+                    System.arraycopy(buffer, lower, output, lower, end - lower);
                 } else if (tocopy < willfit) {
-                    // Sink buffer has extra space in the upper open region.
+                    // Sink buffer has extra space in the upper free region.
                     System.arraycopy(buffer, start, output, sink.end, tocopy);
-                    System.arraycopy(buffer, 0, output, sink.end + tocopy, willfit - tocopy);
+                    System.arraycopy(buffer, lower, output, sink.end + tocopy, willfit - tocopy);
                     tocopy = willfit - tocopy;
-                    System.arraycopy(buffer, tocopy, output, 0, end - tocopy);
+                    System.arraycopy(buffer, lower + tocopy, output, lower, end - lower - tocopy);
                 } else {
                     // Upper free region of sink buffer is too small.
                     System.arraycopy(buffer, start, output, sink.end, willfit);
                     tocopy -= willfit;
-                    System.arraycopy(buffer, start + willfit, output, 0, tocopy);
-                    System.arraycopy(buffer, 0, output, tocopy, end);
+                    System.arraycopy(buffer, start + willfit, output, lower, tocopy);
+                    System.arraycopy(buffer, lower, output, lower + tocopy, end - lower);
                 }
             } else {
-                // Destination has a contiguous open region.
-                int leading = buffer.length - start;
+                // Destination has a contiguous free region.
+                int leading = upper - start;
                 System.arraycopy(buffer, start, output, sink.end, leading);
-                System.arraycopy(buffer, 0, output, sink.end + leading, end);
+                System.arraycopy(buffer, lower, output, sink.end + leading, end - lower);
             }
         } else {
             // Source buffer is contiguous.
-            if (sink.buffer.length - sink.end < count) {
+            if (sink.upper - sink.end < count) {
                 // Destination buffer will wrap around after this call.
-                int leading = sink.buffer.length - sink.end;
+                int leading = sink.upper - sink.end;
                 System.arraycopy(buffer, start, output, sink.end, leading);
-                System.arraycopy(buffer, start + leading, output, 0, count - leading);
+                System.arraycopy(buffer, start + leading, output, lower, count - leading);
             } else {
-                // Both buffers have contiguous open regions.
+                // Both buffers have contiguous free regions.
                 System.arraycopy(buffer, start, output, sink.end, count);
             }
         }
         sink.end += count;
-        if (sink.end >= sink.buffer.length) {
-            sink.end -= sink.buffer.length;
+        if (sink.end >= sink.upper) {
+            sink.end -= sink.upper;
         }
         sink.count += count;
-        start = 0;
-        end = 0;
+        start = lower;
+        end = lower;
         count = 0;
     }
 
@@ -190,15 +210,15 @@ public class CircularBuffer<T> {
         }
         if (end <= start) {
             // Buffer wraps around, must make two calls to arraycopy().
-            int leading = buffer.length - start;
+            int leading = upper - start;
             System.arraycopy(buffer, start, sink, offset, leading);
-            System.arraycopy(buffer, 0, sink, offset + leading, end);
+            System.arraycopy(buffer, lower, sink, offset + leading, end - lower);
         } else {
             // Buffer is in one contiguous region.
             System.arraycopy(buffer, start, sink, offset, end - start);
         }
-        start = 0;
-        end = 0;
+        start = lower;
+        end = lower;
         count = 0;
     }
 
@@ -209,7 +229,7 @@ public class CircularBuffer<T> {
      * @return  buffer capacity.
      */
     public int getCapacity() {
-        return buffer.length;
+        return upper - lower;
     }
 
     /**
@@ -227,7 +247,7 @@ public class CircularBuffer<T> {
      * @return  true if full, false otherwise.
      */
     public boolean isFull() {
-        return count == buffer.length;
+        return count == (upper - lower);
     }
 
     /**
@@ -257,8 +277,8 @@ public class CircularBuffer<T> {
         count--;
         Object o = buffer[start];
         start++;
-        if (start == buffer.length) {
-            start = 0;
+        if (start == upper) {
+            start = lower;
         }
         return (T) o;
     }

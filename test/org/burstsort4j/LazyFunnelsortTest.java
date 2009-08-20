@@ -111,31 +111,21 @@ public class LazyFunnelsortTest {
             data = data.subList(0, 25000);
         }
         String[] arr = data.toArray(new String[data.size()]);
-        // Split into separate arrays and sort each of them.
-        int size = arr.length / 4;
-        String[] a1 = new String[size];
-        int offset = 0;
-        System.arraycopy(arr, offset, a1, 0, size);
-        offset += size;
-        Arrays.sort(a1);
-        String[] a2 = new String[size];
-        System.arraycopy(arr, offset, a2, 0, size);
-        offset += size;
-        Arrays.sort(a2);
-        String[] a3 = new String[size];
-        System.arraycopy(arr, offset, a3, 0, size);
-        offset += size;
-        Arrays.sort(a3);
-        String[] a4 = new String[size];
-        System.arraycopy(arr, offset, a4, 0, size);
-        offset += size;
-        Arrays.sort(a4);
-        // Set up the inputs for the insertion d-way merger.
+        // Split up the inputs for the insertion d-way merger.
         List<CircularBuffer<String>> inputs = new ArrayList<CircularBuffer<String>>();
-        inputs.add(new CircularBuffer<String>(a1, false));
-        inputs.add(new CircularBuffer<String>(a2, false));
-        inputs.add(new CircularBuffer<String>(a3, false));
-        inputs.add(new CircularBuffer<String>(a4, false));
+        int size = arr.length / 4;
+        int offset = 0;
+        Arrays.sort(arr, offset, offset + size);
+        inputs.add(new CircularBuffer<String>(arr, offset, size, false));
+        offset += size;
+        Arrays.sort(arr, offset, offset + size);
+        inputs.add(new CircularBuffer<String>(arr, offset, size, false));
+        offset += size;
+        Arrays.sort(arr, offset, offset + size);
+        inputs.add(new CircularBuffer<String>(arr, offset, size, false));
+        offset += size;
+        Arrays.sort(arr, offset, offset + size);
+        inputs.add(new CircularBuffer<String>(arr, offset, size, false));
         CircularBuffer<String> output = new CircularBuffer<String>(arr.length);
         // Test the merger.
         LazyFunnelsort.insertionMerge(inputs, output);
