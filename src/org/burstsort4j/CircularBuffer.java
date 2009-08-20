@@ -19,6 +19,8 @@
 
 package org.burstsort4j;
 
+import java.lang.reflect.Array;
+
 /**
  * A simple circular buffer of fixed length which has an empty and full
  * state. When full, the buffer will not accept any new entries.
@@ -290,5 +292,39 @@ public class CircularBuffer<T> {
      */
     public int size() {
         return count;
+    }
+
+    /**
+     * Drains this buffer to an array containing all of the elements in proper
+     * sequence (from first to last element); the runtime type of the returned
+     * array is that of the specified array. If the list fits in the specified
+     * array, it is returned therein. Otherwise, a new array is allocated with
+     * the runtime type of the specified array and the size of this list.
+     *
+     * <p>The buffer will be empty after this call.</p>
+     *
+     * <p>If the list fits in the specified array with room to spare
+     * (i.e., the array has more elements than the list), the element in
+     * the array immediately following the end of the collection is set to
+     * <tt>null</tt>. (This is useful in determining the length of the list
+     * <em>only</em> if the caller knows that the list does not contain any
+     * null elements.)</p>
+     *
+     * @param  a  the array into which the elements of the list are to be
+     *            stored, if it is big enough; otherwise, a new array of
+     *            the same runtime type is allocated for this purpose.
+     * @return  contents of this buffer in a sized-to-fit array.
+     */
+    @SuppressWarnings("unchecked")
+    public T[] toArray(T[] a) {
+        if (a.length < count) {
+            a = (T[]) Array.newInstance(a.getClass().getComponentType(), count);
+        }
+        int n = count;
+        drain(a, 0);
+        if (a.length > n) {
+            a[n] = null;
+        }
+        return a;
     }
 }

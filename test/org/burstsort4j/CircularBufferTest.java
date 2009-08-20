@@ -412,4 +412,36 @@ public class CircularBufferTest {
         assertEquals(6, instance.size());
         assertTrue(instance.isFull());
     }
+
+    @Test
+    public void testToArray() {
+        CircularBuffer<Integer> instance = new CircularBuffer<Integer>(10);
+        for (int ii = 1; ii <= 10; ii++) {
+            instance.add(ii);
+        }
+        Integer[] arr = instance.toArray(new Integer[0]);
+        assertEquals(10, arr.length);
+        for (int ii = 1; ii <= 10; ii++) {
+            assertEquals(ii, arr[ii - 1].intValue());
+        }
+
+        for (int ii = 1; ii <= 10; ii++) {
+            instance.add(ii);
+        }
+        arr = instance.toArray(new Integer[10]);
+        assertEquals(10, arr.length);
+        for (int ii = 1; ii <= 10; ii++) {
+            assertEquals(ii, arr[ii - 1].intValue());
+        }
+
+        for (int ii = 1; ii <= 10; ii++) {
+            instance.add(ii);
+        }
+        arr = instance.toArray(new Integer[12]);
+        assertEquals(12, arr.length);
+        for (int ii = 1; ii <= 10; ii++) {
+            assertEquals(ii, arr[ii - 1].intValue());
+        }
+        assertNull(arr[10]);
+    }
 }
