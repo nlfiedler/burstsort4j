@@ -126,10 +126,10 @@ public class CircularBufferTest {
     }
 
     @Test
-    public void drain() {
+    public void testDrain() {
         CircularBuffer<Integer> instance = new CircularBuffer<Integer>(10);
         try {
-            instance.peek();
+            instance.drain(new Integer[10], 0);
             fail("drain of empty buffer should fail");
         } catch (IllegalStateException ise) {
             // expected
@@ -160,6 +160,173 @@ public class CircularBufferTest {
         }
         assertTrue(instance.isEmpty());
         assertEquals(0, instance.size());
+    }
+
+    @Test
+    public void testDrainBuffer() {
+        CircularBuffer<Integer> source = new CircularBuffer<Integer>(10);
+        CircularBuffer<Integer> sink = new CircularBuffer<Integer>(1);
+
+        // Empty source case.
+        try {
+            source.drain(sink);
+            fail("drain of empty buffer should fail");
+        } catch (IllegalStateException ise) {
+            // expected
+        }
+
+        // Full sink case.
+        source.add(1);
+        sink.add(1);
+        try {
+            source.drain(sink);
+            fail("drain to full buffer should fail");
+        } catch (IllegalArgumentException iae) {
+            // expected
+        }
+
+        // Both buffers contiguous free regions case.
+        source = new CircularBuffer<Integer>(8);
+        sink = new CircularBuffer<Integer>(8);
+        for (int i = 1; !source.isFull(); i++) {
+            source.add(i);
+        }
+        source.drain(sink);
+        assertTrue(source.isEmpty());
+        assertEquals(0, source.size());
+        assertTrue(sink.isFull());
+        assertEquals(8, sink.size());
+        for (int i = 1; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Contiguous source but insufficient upper free region in sink case.
+        for (int i = 1; i <= 6; i++) {
+            sink.add(i);
+        }
+        sink.remove();
+        sink.remove();
+        for (int i = 7; i <= 10; i++) {
+            source.add(i);
+        }
+        source.drain(sink);
+        assertTrue(sink.isFull());
+        assertEquals(8, sink.size());
+        for (int i = 3; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Source buffer contiguous, sink buffer contiguous free region
+        // with end below start case.
+        source = new CircularBuffer<Integer>(10);
+        sink = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 10; i++) {
+            sink.add(i);
+        }
+        for (int i = 1; i <= 8; i++) {
+            sink.remove();
+        }
+        sink.add(11);
+        sink.add(12);
+        for (int i = 13; i <= 16; i++) {
+            source.add(i);
+        }
+        source.drain(sink);
+        assertFalse(sink.isFull());
+        assertEquals(8, sink.size());
+        for (int i = 9; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Source buffer not contiguous and sink buffer contiguous case.
+        source = new CircularBuffer<Integer>(10);
+        sink = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 10; i++) {
+            source.add(i);
+        }
+        for (int i = 1; i <= 8; i++) {
+            source.remove();
+        }
+        source.add(11);
+        source.add(12);
+        source.drain(sink);
+        assertFalse(sink.isFull());
+        assertEquals(4, sink.size());
+        for (int i = 9; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Source and sink buffers are not contiguous, direct-map case.
+        source = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 10; i++) {
+            source.add(i);
+        }
+        for (int i = 1; i <= 8; i++) {
+            source.remove();
+        }
+        for (int i = 11; i <= 14; i++) {
+            source.add(i);
+        }
+        sink = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 8; i++) {
+            sink.add(i);
+        }
+        for (int i = 1; i <= 5; i++) {
+            sink.remove();
+        }
+        source.drain(sink);
+        assertFalse(sink.isFull());
+        assertEquals(9, sink.size());
+        for (int i = 6; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Source and sink buffers not contiguous, extra space case.
+        source = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 10; i++) {
+            source.add(i);
+        }
+        for (int i = 1; i <= 8; i++) {
+            source.remove();
+        }
+        for (int i = 11; i <= 16; i++) {
+            source.add(i);
+        }
+        sink = new CircularBuffer<Integer>(10);
+        for (int i = 3; i <= 8; i++) {
+            sink.add(i);
+        }
+        for (int i = 1; i <= 4; i++) {
+            sink.remove();
+        }
+        source.drain(sink);
+        assertTrue(sink.isFull());
+        assertEquals(10, sink.size());
+        for (int i = 7; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+
+        // Source and sink buffers not contiguous, insufficient space case.
+        source = new CircularBuffer<Integer>(10);
+        for (int i = 1; i <= 10; i++) {
+            source.add(i);
+        }
+        for (int i = 1; i <= 4; i++) {
+            source.remove();
+        }
+        sink = new CircularBuffer<Integer>(10);
+        for (int i = -2; i <= 4; i++) {
+            sink.add(i);
+        }
+        for (int i = 1; i <= 3; i++) {
+            sink.remove();
+        }
+        source.drain(sink);
+        assertTrue(sink.isFull());
+        assertEquals(10, sink.size());
+        for (int i = 1; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
     }
 
     @Test

@@ -106,63 +106,96 @@ public class CircularBuffer<T> {
 
     /**
      * Drains the contents of the circular buffer into the given sink
-     * in an efficient manner (uses System.arraycopy). Copies the
-     * remaining elements of the circular buffer to the destination,
-     * leaving the buffer empty.
+     * in an efficient manner (using System.arraycopy). Copies the
+     * remaining elements of this circular buffer to the destination,
+     * leaving this buffer empty.
      *
      * @param  sink  destination for buffer contents.
      */
-//    public void drain(CircularBuffer sink) {
-//        if (count == 0) {
-//            throw new IllegalStateException("buffer is empty");
-//        }
-//        if (sink.getCapacity() - sink.size() < count) {
-//            throw new IllegalStateException("sink too small");
-//        }
-//        Object[] output = sink.buffer;
-//        if (end <= start) {
-//            if (sink.end <= sink.start) {
-//                // Destination buffer wraps around.
-//                // TODO
-//            } else {
-//                // Buffer wraps around, must make two calls to arraycopy().
-//                int leading = buffer.length - start;
-//                System.arraycopy(buffer, start, output, sink.start, leading);
-//                System.arraycopy(buffer, 0, output, sink.start + leading, end);
-//            }
-//        } else {
-//            // Buffer is in one contiguous region.
-//            System.arraycopy(buffer, start, output, offset, end - start);
-//        }
-//        start = 0;
-//        end = 0;
-//        count = 0;
-//    }
-
-    /**
-     * Drains the contents of the circular buffer into the given output
-     * array in an efficient manner (uses System.arraycopy). Copies the
-     * remaining elements of the circular buffer to the destination,
-     * leaving the buffer empty.
-     *
-     * @param  output  destination for buffer contents.
-     * @param  offset  position in output to which elements are copied.
-     */
-    public void drain(T[] output, int offset) {
+    public void drain(CircularBuffer sink) {
         if (count == 0) {
             throw new IllegalStateException("buffer is empty");
         }
-        if (output.length - offset < count) {
-            throw new IllegalStateException("destination too small");
+        if (sink.buffer.length - sink.count < count) {
+            throw new IllegalArgumentException("sink too small");
+        }
+        Object[] output = sink.buffer;
+        if (end <= start) {
+            // Source buffer is not contiguous.
+            if (sink.buffer.length - sink.end < count) {
+                // Destination buffer will wrap around after this call.
+                int tocopy = buffer.length - start;
+                int willfit = sink.buffer.length - sink.end;
+                if (tocopy == willfit) {
+                    // Source buffer regions map directly onto open regions
+                    // of sink buffer.
+                    System.arraycopy(buffer, start, output, sink.end, tocopy);
+                    System.arraycopy(buffer, 0, output, 0, end);
+                } else if (tocopy < willfit) {
+                    // Sink buffer has extra space in the upper open region.
+                    System.arraycopy(buffer, start, output, sink.end, tocopy);
+                    System.arraycopy(buffer, 0, output, sink.end + tocopy, willfit - tocopy);
+                    tocopy = willfit - tocopy;
+                    System.arraycopy(buffer, tocopy, output, 0, end - tocopy);
+                } else {
+                    // Upper free region of sink buffer is too small.
+                    System.arraycopy(buffer, start, output, sink.end, willfit);
+                    tocopy -= willfit;
+                    System.arraycopy(buffer, start + willfit, output, 0, tocopy);
+                    System.arraycopy(buffer, 0, output, tocopy, end);
+                }
+            } else {
+                // Destination has a contiguous open region.
+                int leading = buffer.length - start;
+                System.arraycopy(buffer, start, output, sink.end, leading);
+                System.arraycopy(buffer, 0, output, sink.end + leading, end);
+            }
+        } else {
+            // Source buffer is contiguous.
+            if (sink.buffer.length - sink.end < count) {
+                // Destination buffer will wrap around after this call.
+                int leading = sink.buffer.length - sink.end;
+                System.arraycopy(buffer, start, output, sink.end, leading);
+                System.arraycopy(buffer, start + leading, output, 0, count - leading);
+            } else {
+                // Both buffers have contiguous open regions.
+                System.arraycopy(buffer, start, output, sink.end, count);
+            }
+        }
+        sink.end += count;
+        if (sink.end >= sink.buffer.length) {
+            sink.end -= sink.buffer.length;
+        }
+        sink.count += count;
+        start = 0;
+        end = 0;
+        count = 0;
+    }
+
+    /**
+     * Drains the contents of the circular buffer into the given output
+     * array in an efficient manner (using System.arraycopy). Copies the
+     * remaining elements of this circular buffer to the destination,
+     * leaving this buffer empty.
+     *
+     * @param  sink    destination for buffer contents.
+     * @param  offset  position in output to which elements are copied.
+     */
+    public void drain(T[] sink, int offset) {
+        if (count == 0) {
+            throw new IllegalStateException("buffer is empty");
+        }
+        if (sink.length - offset < count) {
+            throw new IllegalArgumentException("destination too small");
         }
         if (end <= start) {
             // Buffer wraps around, must make two calls to arraycopy().
             int leading = buffer.length - start;
-            System.arraycopy(buffer, start, output, offset, leading);
-            System.arraycopy(buffer, 0, output, offset + leading, end);
+            System.arraycopy(buffer, start, sink, offset, leading);
+            System.arraycopy(buffer, 0, sink, offset + leading, end);
         } else {
             // Buffer is in one contiguous region.
-            System.arraycopy(buffer, start, output, offset, end - start);
+            System.arraycopy(buffer, start, sink, offset, end - start);
         }
         start = 0;
         end = 0;
