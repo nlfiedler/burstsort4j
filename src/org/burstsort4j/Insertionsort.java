@@ -33,8 +33,8 @@ public class Insertionsort {
      *
      * @param  <T>   type of comparable to be sorted.
      * @param  arr   comparables to be sorted.
-     * @param  low   low end of range to sort.
-     * @param  high  high end of range to sort.
+     * @param  low   low end of range to sort (inclusive).
+     * @param  high  high end of range to sort (inclusive).
      */
     public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         for (int i = low + 1; i <= high; i++) {
