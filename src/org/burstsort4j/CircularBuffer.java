@@ -136,60 +136,7 @@ public class CircularBuffer<T> {
         if (count == 0) {
             throw new IllegalStateException("buffer is empty");
         }
-        if (sink.upper - sink.lower - sink.count < count) {
-            throw new IllegalArgumentException("sink too small");
-        }
-        Object[] output = sink.buffer;
-        if (end <= start) {
-            // Source buffer is not contiguous.
-            if (sink.upper - sink.end < count) {
-                // Destination buffer will wrap around after this call.
-                int tocopy = upper - start;
-                int willfit = sink.upper - sink.end;
-                if (tocopy == willfit) {
-                    // Source buffer regions map directly onto free regions
-                    // of sink buffer.
-                    System.arraycopy(buffer, start, output, sink.end, tocopy);
-                    System.arraycopy(buffer, lower, output, lower, end - lower);
-                } else if (tocopy < willfit) {
-                    // Sink buffer has extra space in the upper free region.
-                    System.arraycopy(buffer, start, output, sink.end, tocopy);
-                    System.arraycopy(buffer, lower, output, sink.end + tocopy, willfit - tocopy);
-                    tocopy = willfit - tocopy;
-                    System.arraycopy(buffer, lower + tocopy, output, lower, end - lower - tocopy);
-                } else {
-                    // Upper free region of sink buffer is too small.
-                    System.arraycopy(buffer, start, output, sink.end, willfit);
-                    tocopy -= willfit;
-                    System.arraycopy(buffer, start + willfit, output, lower, tocopy);
-                    System.arraycopy(buffer, lower, output, lower + tocopy, end - lower);
-                }
-            } else {
-                // Destination has a contiguous free region.
-                int leading = upper - start;
-                System.arraycopy(buffer, start, output, sink.end, leading);
-                System.arraycopy(buffer, lower, output, sink.end + leading, end - lower);
-            }
-        } else {
-            // Source buffer is contiguous.
-            if (sink.upper - sink.end < count) {
-                // Destination buffer will wrap around after this call.
-                int leading = sink.upper - sink.end;
-                System.arraycopy(buffer, start, output, sink.end, leading);
-                System.arraycopy(buffer, start + leading, output, lower, count - leading);
-            } else {
-                // Both buffers have contiguous free regions.
-                System.arraycopy(buffer, start, output, sink.end, count);
-            }
-        }
-        sink.end += count;
-        if (sink.end >= sink.upper) {
-            sink.end -= sink.upper;
-        }
-        sink.count += count;
-        start = lower;
-        end = lower;
-        count = 0;
+        move(sink, count);
     }
 
     /**
@@ -248,6 +195,44 @@ public class CircularBuffer<T> {
      */
     public boolean isFull() {
         return count == (upper - lower);
+    }
+
+    /**
+     * Moves the given number of elements from this circular buffer into
+     * the sink buffer in an efficient manner (using System.arraycopy).
+     * This is equivalent to repeatedly removing elements from this buffer
+     * and adding them to the sink.
+     *
+     * @param  sink  destination for buffer contents.
+     * @param  n     number of elements to be moved.
+     */
+    @SuppressWarnings("unchecked")
+    public void move(CircularBuffer sink, int n) {
+        if (count < n) {
+            throw new IllegalStateException("source has too few items");
+        }
+        if (sink.upper - sink.lower - sink.count < n) {
+            throw new IllegalArgumentException("sink has insufficient space");
+        }
+
+        int tocopy = n;
+        while (tocopy > 0) {
+            int desired = Math.min(tocopy, Math.max(end - start, upper - start));
+            int willfit = sink.start <= sink.end ? sink.upper - sink.end : sink.start - sink.end;
+            int copied = Math.min(desired, willfit);
+            System.arraycopy(buffer, start, sink.buffer, sink.end, copied);
+            sink.end += copied;
+            if (sink.end >= sink.upper) {
+                sink.end -= (sink.upper - sink.lower);
+            }
+            start += copied;
+            if (start >= upper) {
+                start -= (upper - lower);
+            }
+            tocopy -= copied;
+        }
+        sink.count += n;
+        count -= n;
     }
 
     /**

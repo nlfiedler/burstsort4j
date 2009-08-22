@@ -348,6 +348,30 @@ public class CircularBufferTest {
     }
 
     @Test
+    public void testMove() {
+        // No need for exhaustive tests here since we know the drain()
+        // method delegates to move() and thus it is already well tested.
+
+        // Both buffers contiguous free regions case.
+        CircularBuffer<Integer> source = new CircularBuffer<Integer>(8);
+        CircularBuffer<Integer> sink = new CircularBuffer<Integer>(8);
+        for (int i = 1; !source.isFull(); i++) {
+            source.add(i);
+        }
+        source.move(sink, 4);
+        assertFalse(source.isEmpty());
+        assertEquals(4, source.size());
+        for (int i = 5; !source.isEmpty(); i++) {
+            assertEquals(i, source.remove().intValue());
+        }
+        assertFalse(sink.isFull());
+        assertEquals(4, sink.size());
+        for (int i = 1; !sink.isEmpty(); i++) {
+            assertEquals(i, sink.remove().intValue());
+        }
+    }
+
+    @Test
     public void testIsEmpty() {
         CircularBuffer<String> instance = new CircularBuffer<String>(2);
         assertTrue(instance.isEmpty());
