@@ -99,4 +99,82 @@ public class LazyFunnelsort {
             }
         }
     }
+
+    /**
+     * Merge the inputs using an insertion d-way merge until the output
+     * buffer is full, removing exhausted inputs from the list.
+     *
+     * @param  inputs  list of input buffers to be merged; this list is
+     *                 modified such that exhausted buffers are removed.
+     * @param  output  buffer to be filled with merged inputs.
+     */
+    @SuppressWarnings("unchecked")
+    private static void k_merge(List<CircularBuffer<String>> inputs,
+            CircularBuffer<String> output) {
+
+        // Perform an insertion sort of the buffers using the leading values.
+        for (int i = 1; i < inputs.size(); i++) {
+            CircularBuffer<String> tmp = inputs.get(i);
+            int j = i;
+            while (j > 0 && tmp.peek().compareTo(inputs.get(j - 1).peek()) < 0) {
+                inputs.set(j, inputs.get(j - 1));
+                j--;
+            }
+            inputs.set(j, tmp);
+        }
+
+        // While there are streams to be processed...
+        while (inputs.size() > 0) {
+            if (inputs.size() == 1) {
+                // Copy remainder of last stream to output.
+                CircularBuffer<String> a = inputs.get(0);
+// TODO: would be faster to have a "fill" operation on CircularBuffer
+                while (!output.isFull()) {
+                    output.add(a.remove());
+                }
+                inputs.clear();
+            } else if (inputs.size() == 2) {
+                // With only two streams, perform a faster merge.
+                CircularBuffer<String> a = inputs.get(0);
+                CircularBuffer<String> b = inputs.get(1);
+                while (!a.isEmpty() && !b.isEmpty()) {
+                    if (a.peek().compareTo(b.peek()) < 0) {
+                        output.add(a.remove());
+                    } else {
+                        output.add(b.remove());
+                    }
+                }
+                if (!a.isEmpty()) {
+// TODO: would be faster to have a "fill" operation on CircularBuffer
+                    while (!output.isFull()) {
+                        output.add(a.remove());
+                    }
+                }
+                if (!b.isEmpty()) {
+// TODO: would be faster to have a "fill" operation on CircularBuffer
+                    while (!output.isFull()) {
+                        output.add(b.remove());
+                    }
+                }
+                inputs.clear();
+            } else {
+                output.add(inputs.get(0).remove());
+                if (inputs.get(0).isEmpty()) {
+                    // This stream has been exhausted, remove it from the pool.
+                    inputs.remove(0);
+                } else {
+                    // Insert new candidate into correct position in d.
+                    CircularBuffer<String> t = inputs.get(0);
+                    String s = t.peek();
+                    int j = 1;
+                    int length = inputs.size();
+                    while (j < length && s.compareTo(inputs.get(j).peek()) > 0) {
+                        inputs.set(j - 1, inputs.get(j));
+                        j++;
+                    }
+                    inputs.set(j - 1, t);
+                }
+            }
+        }
+    }
 }
