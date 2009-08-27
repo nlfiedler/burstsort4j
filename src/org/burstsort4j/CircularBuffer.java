@@ -31,7 +31,7 @@ package org.burstsort4j;
  * @param  <T>  type of elements in the buffer.
  * @author Nathan Fiedler
  */
-public class CircularBuffer<T> {
+public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfaces
     /** The circular buffer. */
     private final Object[] buffer;
     /** Lowest usable position within the buffer. */
