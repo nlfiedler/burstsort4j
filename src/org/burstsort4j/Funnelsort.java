@@ -84,6 +84,13 @@ public class Funnelsort {
         int getK();
 
         /**
+         * Return the reference to this merger's output buffer.
+         *
+         * @return  output buffer for this merger, or null if none.
+         */
+        CircularBuffer<String> getOutput();
+
+        /**
          * Merges k^3 elements from the inputs and writes them to the output.
          */
         void merge();
@@ -100,6 +107,19 @@ public class Funnelsort {
      * MergerFactory creates instances of Kmerger based on the given inputs.
      */
     private static class MergerFactory {
+
+        /**
+         * Constructs a k-merger for the set of elements between the lower
+         * and upper indices within the input array.
+         *
+         * @param  data   the elements to be sorted and merged.
+         * @param  lower  lower bound in array (inclusive).
+         * @param  upper  upper bound in array (exclusive).
+         * @return  a new k-merger.
+         */
+        public static Kmerger createMerger(Comparable[] data, int lower, int upper) {
+            return new LeftMerger(data, lower, upper);
+        }
 
         /**
          * Creates a new instance of Kmerger appropriate for the inputs.
@@ -186,6 +206,11 @@ public class Funnelsort {
         }
 
         @Override
+        public CircularBuffer<String> getOutput() {
+            return output;
+        }
+
+        @Override
         public void merge() {
             // Lazily sort the input buffer the first time we're asked
             // to produce output.
@@ -245,6 +270,11 @@ public class Funnelsort {
         }
 
         @Override
+        public CircularBuffer<String> getOutput() {
+            return output;
+        }
+
+        @Override
         public void merge() {
             // Lazily sort the input buffer the first time we're asked
             // to produce output.
@@ -288,7 +318,87 @@ public class Funnelsort {
     }
 
     /**
-     * An RightMerger divides up the input streams into k^(1/2) groups
+     * A LeftMerger divides up the input into k^(1/2) groups each of size
+     * k^(1/2), creating additional mergers for those groups, and merging
+     * their output into a sngle buffer.
+     */
+    private static class LeftMerger implements Kmerger {
+        private final int k;
+        private final int kpow3;
+        private Comparable[] data;
+        private int lower;
+        private int upper;
+        private CircularBuffer<String> output;
+        /** The right k-merger for merging the k^(1/2) input streams. */
+        private final Kmerger R;
+        /** The left k^(1/2) k-mergers each of size k^(1/2). */
+        private final List<Kmerger> Li;
+
+        public LeftMerger(Comparable[] data, int lower, int upper) {
+            k = upper - lower;
+            kpow3 = k * k * k;
+            this.data = data;
+            this.lower = lower;
+            this.upper = upper;
+
+// TODO: what to do when k equals 1, 2, or 3?
+
+            int k3half = Math.round((float) Math.sqrt((double) kpow3));
+            // Without rounding the sqrt we risk having an infinite loop
+            // (e.g. sqrt(3) = 1, equals a 3-way merger, hence a loop).
+            int kroot = Math.round((float) Math.sqrt((double) k));
+            int twok3half = 2 * k3half;
+            int offset = lower;
+
+            // Set up the left mergers.
+            List<CircularBuffer<String>> buffers =
+                    new ArrayList<CircularBuffer<String>>(kroot + 1);
+            Li = new ArrayList<Kmerger>();
+            for (int ii = 1; ii < kroot; ii++) {
+                CircularBuffer<String> buffer = new CircularBuffer<String>(twok3half);
+                buffers.add(buffer);
+                Kmerger li = MergerFactory.createMerger(data, offset, offset + kroot);
+                li.setOutput(buffer);
+                Li.add(li);
+                offset += kroot;
+            }
+            if (upper > offset) {
+                CircularBuffer<String> buffer = new CircularBuffer<String>(twok3half);
+                buffers.add(buffer);
+                Kmerger li = MergerFactory.createMerger(data, offset, upper);
+                li.setOutput(buffer);
+                Li.add(li);
+            }
+
+// TODO: how to get output buffer for right merger?
+            // Build the right merger.
+            R = MergerFactory.createMerger(buffers, output);
+        }
+
+        @Override
+        public int getK() {
+            return k;
+        }
+
+        @Override
+        public CircularBuffer<String> getOutput() {
+            return output;
+        }
+
+        @Override
+        public void merge() {
+            throw new UnsupportedOperationException("Not supported yet.");
+            // TODO: output kpow3 elements
+        }
+
+        @Override
+        public void setOutput(CircularBuffer<String> output) {
+            this.output = output;
+        }
+    }
+
+    /**
+     * A RightMerger divides up the input streams into k^(1/2) groups
      * each of size k^(1/2), creating additional mergers for those
      * groups, and ultimately merging their output into a sngle buffer.
      */
@@ -354,6 +464,11 @@ public class Funnelsort {
         }
 
         @Override
+        public CircularBuffer<String> getOutput() {
+            return R.getOutput();
+        }
+
+        @Override
         public void merge() {
             // Invoke the R merger k^(3/2) times to generate our output.
             for (int ii = 0; ii < k3half; ii++) {
@@ -409,6 +524,11 @@ public class Funnelsort {
         public int getK() {
             // Even though this is a single, it pretends to be a 2-way.
             return 2;
+        }
+
+        @Override
+        public CircularBuffer<String> getOutput() {
+            return output;
         }
 
         @Override
@@ -474,6 +594,11 @@ public class Funnelsort {
         @Override
         public int getK() {
             return 2;
+        }
+
+        @Override
+        public CircularBuffer<String> getOutput() {
+            return output;
         }
 
         @Override
@@ -557,6 +682,11 @@ public class Funnelsort {
         @Override
         public int getK() {
             return k;
+        }
+
+        @Override
+        public CircularBuffer<String> getOutput() {
+            return R.getOutput();
         }
 
         @Override
