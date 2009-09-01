@@ -19,6 +19,11 @@
 
 package org.burstsort4j;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+
 /**
  * A simple circular buffer of fixed length which has an empty and full
  * state. When full, the buffer will not accept any new entries.
@@ -28,10 +33,10 @@ package org.burstsort4j;
  * the threads modifies the buffer structurally, it must be synchronized
  * externally.</p>
  *
- * @param  <T>  type of elements in the buffer.
+ * @param  <E>  type of elements in the buffer.
  * @author Nathan Fiedler
  */
-public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfaces
+public class CircularBuffer<E> implements Collection, Queue {
     /** The circular buffer. */
     private final Object[] buffer;
     /** Lowest usable position within the buffer. */
@@ -64,7 +69,7 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
      *
      * @param  initial  data to be stored in buffer initially.
      */
-    public CircularBuffer(T[] initial) {
+    public CircularBuffer(E[] initial) {
         this(initial, true);
     }
 
@@ -77,7 +82,7 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
      * @param  copy     if true, data will be copied to a new array,
      *                  otherwise the given array will be used as-is.
      */
-    public CircularBuffer(T[] initial, boolean copy) {
+    public CircularBuffer(E[] initial, boolean copy) {
         this(initial, 0, initial.length, copy);
     }
 
@@ -93,7 +98,7 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
      * @param  copy     if true, data will be copied to a new array,
      *                  otherwise the given array will be used as-is.
      */
-    public CircularBuffer(T[] initial, int offset, int count, boolean copy) {
+    public CircularBuffer(E[] initial, int offset, int count, boolean copy) {
         if (copy) {
             buffer = new Object[count];
             System.arraycopy(initial, offset, buffer, 0, count);
@@ -107,12 +112,8 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         end = lower;
     }
 
-    /**
-     * Adds the given object to the buffer.
-     *
-     * @param  o  object to be added.
-     */
-    public void add(T o) {
+    @Override
+    public boolean add(Object o) {
         if (count == upper - lower) {
             throw new IllegalStateException("buffer is full");
         }
@@ -122,6 +123,33 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         if (end == upper) {
             end = lower;
         }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(Collection c) {
+        Iterator i = c.iterator();
+        while (i.hasNext()) {
+            add(i.next());
+        }
+        return true;
+    }
+
+    @Override
+    public void clear() {
+        start = lower;
+        end = lower;
+        count = 0;
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean containsAll(Collection c) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
@@ -148,7 +176,7 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
      * @param  sink    destination for buffer contents.
      * @param  offset  position in output to which elements are copied.
      */
-    public void drain(T[] sink, int offset) {
+    public void drain(E[] sink, int offset) {
         if (count == 0) {
             throw new IllegalStateException("buffer is empty");
         }
@@ -169,6 +197,15 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         count = 0;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public Object element() {
+        if (count == 0) {
+            throw new NoSuchElementException("buffer is empty");
+        }
+        return (E) buffer[start];
+    }
+
     /**
      * Returns the total number of elements this buffer can hold (the same
      * value passed to the constructor).
@@ -179,11 +216,7 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         return upper - lower;
     }
 
-    /**
-     * Indicates if the buffer is empty.
-     *
-     * @return  true if empty, false otherwise.
-     */
+    @Override
     public boolean isEmpty() {
         return count == 0;
     }
@@ -195,6 +228,25 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
      */
     public boolean isFull() {
         return count == (upper - lower);
+    }
+
+    @Override
+    public Iterator iterator() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean offer(Object o) {
+        if (count == upper - lower) {
+            return false;
+        }
+        count++;
+        buffer[end] = o;
+        end++;
+        if (end == upper) {
+            end = lower;
+        }
+        return true;
     }
 
     /**
@@ -235,29 +287,17 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         count -= n;
     }
 
-    /**
-     * Returns the first element in the buffer without removing it. The
-     * buffer is not modified in any way by this operation.
-     *
-     * @return  first element in the buffer.
-     */
+    @Override
     @SuppressWarnings("unchecked")
-    public T peek() {
-        if (count == 0) {
-            throw new IllegalStateException("buffer is empty");
-        }
-        return (T) buffer[start];
+    public E peek() {
+        return count == 0 ? null : (E) buffer[start];
     }
 
-    /**
-     * Removes the first element in the buffer.
-     *
-     * @return  first element in the buffer.
-     */
+    @Override
     @SuppressWarnings("unchecked")
-    public T remove() {
+    public E poll() {
         if (count == 0) {
-            throw new IllegalStateException("buffer is empty");
+            return null;
         }
         count--;
         Object o = buffer[start];
@@ -265,14 +305,50 @@ public class CircularBuffer<T> { // TODO: implement the Collection/Queue interfa
         if (start == upper) {
             start = lower;
         }
-        return (T) o;
+        return (E) o;
     }
 
-    /**
-     * Returns the number of elements stored in the buffer.
-     *
-     * @return  number of elements in buffer.
-     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public E remove() {
+        if (count == 0) {
+            throw new NoSuchElementException("buffer is empty");
+        }
+        count--;
+        Object o = buffer[start];
+        start++;
+        if (start == upper) {
+            start = lower;
+        }
+        return (E) o;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException("Not supported on circular buffer.");
+    }
+
+    @Override
+    public boolean removeAll(Collection c) {
+        throw new UnsupportedOperationException("Not supported on circular buffer.");
+    }
+
+    @Override
+    public boolean retainAll(Collection c) {
+        throw new UnsupportedOperationException("Not supported on circular buffer.");
+    }
+
+    @Override
+    public Object[] toArray() {
+        throw new UnsupportedOperationException("Use drain() instead.");
+    }
+
+    @Override
+    public Object[] toArray(Object[] a) {
+        throw new UnsupportedOperationException("Use drain() instead.");
+    }
+
+    @Override
     public int size() {
         return count;
     }

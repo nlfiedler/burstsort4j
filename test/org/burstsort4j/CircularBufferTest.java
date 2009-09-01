@@ -19,6 +19,7 @@
 
 package org.burstsort4j;
 
+import java.util.NoSuchElementException;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -38,7 +39,7 @@ public class CircularBufferTest {
         assertFalse(instance.isEmpty());
         assertFalse(instance.isFull());
         instance.add("abc123");
-        instance.add("abc123");
+        instance.offer("abc123");
         instance.add("abc123");
         instance.add("abc123");
         assertFalse(instance.isEmpty());
@@ -77,6 +78,7 @@ public class CircularBufferTest {
         } catch (IllegalStateException ise) {
             // expected
         }
+        assertFalse(instance.offer("foo"));
         while (!instance.isEmpty()) {
             instance.remove();
         }
@@ -394,18 +396,21 @@ public class CircularBufferTest {
         assertFalse(instance.isFull());
         assertTrue(instance.isEmpty());
         try {
-            instance.peek();
-            fail("peek of empty buffer should fail");
-        } catch (IllegalStateException ise) {
+            instance.element();
+            fail("element() of empty buffer should fail");
+        } catch (NoSuchElementException nsee) {
             // expected
         }
         instance.add("abc");
+        assertEquals("abc", instance.element());
         assertEquals("abc", instance.peek());
         instance.add("123");
+        assertEquals("abc", instance.element());
         assertEquals("abc", instance.peek());
         assertTrue(instance.isFull());
         assertFalse(instance.isEmpty());
         instance.remove();
+        assertEquals("123", instance.element());
         assertEquals("123", instance.peek());
     }
 
@@ -420,12 +425,14 @@ public class CircularBufferTest {
         instance.add("3");
         assertEquals(6, instance.size());
         assertTrue(instance.isFull());
+        assertEquals("a", instance.poll());
         while (!instance.isEmpty()) {
             instance.remove();
         }
         assertFalse(instance.isFull());
         assertTrue(instance.isEmpty());
         assertEquals(0, instance.size());
+        assertNull(instance.poll());
         // Test adding again.
         instance.add("a");
         instance.add("b");
