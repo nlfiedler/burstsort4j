@@ -19,7 +19,6 @@
 package org.burstsort4j;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,31 +42,53 @@ public class Funnelsort {
         if (strings == null || strings.length < 2) {
             return;
         }
+        sort(strings, 0, strings.length);
+    }
 
-        // Divide input strings into n^(1/3) arrays of size n^(2/3).
-        int n13 = Math.round((float) Math.cbrt((double) strings.length));
-        //int n23 = n13 * n13;
-        int n23 = strings.length / n13;
-        int offset = 0;
-        List<CircularBuffer<String>> inputs = new ArrayList<CircularBuffer<String>>(n13);
-        for (int ii = 1; ii < n13; ii++) {
-            inputs.add(new CircularBuffer<String>(strings, offset, n23, false));
-            offset += n23;
+    /**
+     * Sorts the elements within the array starting at the offset and
+     * ending at offset plus the count.
+     *
+     * @param  strings  array containing elements to be sorted.
+     * @param  offset   first position within array to be sorted.
+     * @param  count    number of elements from offset to be sorted.
+     */
+    private static void sort(String[] strings, int offset, int count) {
+        // For arrays of trivial length, delegate to insertion sort.
+        if (count < 21) {
+            Insertionsort.sort(strings, offset, offset + count - 1);
+        } else {
+
+            // Divide input into n^(1/3) arrays of size n^(2/3).
+            int num_blocks = Math.round((float) Math.cbrt((double) count));
+            int block_size = count / num_blocks;
+            int mark = offset;
+            for (int ii = 1; ii < num_blocks; ii++) {
+                sort(strings, mark, block_size);
+                mark += block_size;
+            }
+            int leftover = count - mark;
+            if (leftover > 0) {
+                sort(strings, mark, leftover);
+            }
+
+            // Merge the n^(1/3) sorted arrays using a k-merger.
+            List<CircularBuffer<String>> inputs =
+                    new ArrayList<CircularBuffer<String>>(num_blocks + 1);
+            mark = offset;
+            for (int ii = 1; ii < num_blocks; ii++) {
+                inputs.add(new CircularBuffer<String>(strings, mark, block_size, false));
+                mark += block_size;
+            }
+            leftover = count - mark;
+            if (leftover > 0) {
+                inputs.add(new CircularBuffer<String>(strings, mark, leftover, false));
+            }
+            CircularBuffer<String> output = new CircularBuffer<String>(count);
+            Kmerger merger = MergerFactory.createMerger(inputs, output);
+            merger.merge();
+            output.drain(strings, offset);
         }
-        int leftover = strings.length - offset;
-        if (leftover > 0) {
-            inputs.add(new CircularBuffer<String>(strings, offset, leftover, false));
-        }
-
-        // Recursively sort the n^(1/3) arrays.
-        CircularBuffer<String> output = new CircularBuffer<String>(strings.length);
-        Kmerger kmerger = MergerFactory.createMerger(inputs, output);
-// XXX: this seems hackish, isn't there a better way?
-        kmerger = MergerFactory.createRoot(Collections.singletonList(kmerger), output);
-        kmerger.merge();
-
-        // Copy sorted output to strings array.
-        output.drain(strings, 0);
     }
 
     /**
@@ -75,13 +96,6 @@ public class Funnelsort {
      * stream, sorting the elements in the process.
      */
     private static interface Kmerger {
-
-        /**
-         * Returns the size of this k-merger.
-         *
-         * @return  the 'k' value for this merger.
-         */
-        int getK();
 
         /**
          * Return the reference to this merger's output buffer.
@@ -94,32 +108,12 @@ public class Funnelsort {
          * Merges k^3 elements from the inputs and writes them to the output.
          */
         void merge();
-
-        /**
-         * Set the destination of the output of this merger.
-         *
-         * @param  output  buffer to which merged output is written.
-         */
-        void setOutput(CircularBuffer<String> output);
     }
 
     /**
      * MergerFactory creates instances of Kmerger based on the given inputs.
      */
     private static class MergerFactory {
-
-        /**
-         * Constructs a k-merger for the set of elements between the lower
-         * and upper indices within the input array.
-         *
-         * @param  data   the elements to be sorted and merged.
-         * @param  lower  lower bound in array (inclusive).
-         * @param  upper  upper bound in array (exclusive).
-         * @return  a new k-merger.
-         */
-        public static Kmerger createMerger(Comparable[] data, int lower, int upper) {
-            return new LeftMerger(data, lower, upper);
-        }
 
         /**
          * Creates a new instance of Kmerger appropriate for the inputs.
@@ -130,30 +124,12 @@ public class Funnelsort {
          */
         public static Kmerger createMerger(List<CircularBuffer<String>> inputs,
                 CircularBuffer<String> output) {
-            if (inputs.get(0).isEmpty()) {
-                return new RightMerger(inputs, output);
+            int k = inputs.size();
+            if (k < 4) {
+                throw new IllegalArgumentException("cannot merge so few streams");
             } else {
-                int k = inputs.size();
-                if (k == 1) {
-                    return new SingleSortingMerger(inputs.get(0), output);
-                } else if (k == 2) {
-                    return new SortingMerger(inputs.get(0), inputs.get(1), output);
-                } else {
-                    return new RightMerger(inputs, output);
-                }
+                return new RightMerger(inputs, output);
             }
-        }
-
-        /**
-         * Creates a new instance of Kmerger appropriate for the inputs.
-         *
-         * @param  inputs  streams of sorted input to be merged.
-         * @param  output  buffer to which merged results are written.
-         * @return  a Kmerger instance.
-         */
-        public static Kmerger createMerger(Kmerger input,
-                CircularBuffer<String> output) {
-            return new SingleMerger(input, output);
         }
 
         /**
@@ -168,232 +144,20 @@ public class Funnelsort {
             return new TwoWayMerger(input1, input2, output);
         }
 
-        public static Kmerger createRoot(List<Kmerger> inputs,
-                CircularBuffer<String> output) {
-            return new RootMerger(inputs, output);
-        }
-    }
-
-    /**
-     * A k-merger that simply pipes an input buffer to an output buffer,
-     * acting like a k-merger but not performing any merging. The inputs
-     * are sorted using a comparison-based string sorting algorithm.
-     */
-    private static class SingleSortingMerger implements Kmerger {
-        /** The input buffer. */
-        private CircularBuffer<String> input;
-        /** The output buffer. */
-        private CircularBuffer<String> output;
-        /** True if the input has already been sorted. */
-        private boolean sorted;
-
         /**
-         * Creates a new instance of SingleSortingMerger.
+         * Creates a new instance of Kmerger appropriate for the inputs.
          *
-         * @param  input   the input buffer.
-         * @param  output  the output buffer.
+         * @param  m1      first of the mergers to merge.
+         * @param  m2      second of the mergers to merge.
+         * @param  m3      third of the mergers to merge.
+         * @param  output  buffer to which merged results are written.
+         * @return  a Kmerger instance.
          */
-        public SingleSortingMerger(CircularBuffer<String> input,
+        public static Kmerger createMerger(Kmerger m1, Kmerger m2, Kmerger m3,
                 CircularBuffer<String> output) {
-            this.input = input;
-            this.output = output;
-        }
-
-        @Override
-        public int getK() {
-            // Even though this is a single, it pretends to be a 2-way.
-            return 2;
-        }
-
-        @Override
-        public CircularBuffer<String> getOutput() {
-            return output;
-        }
-
-        @Override
-        public void merge() {
-            // Lazily sort the input buffer the first time we're asked
-            // to produce output.
-            if (!sorted) {
-                String[] arr = new String[input.size()];
-                input.drain(arr, 0);
-                Quicksort.sort(arr);
-                input = new CircularBuffer<String>(arr, false);
-                sorted = true;
-            }
-            // Copy k^3 elements from the input buffer to the output.
-            final int kpow3 = 8;
-            int n = Math.min(input.size(), kpow3);
-            if (n > 0) {
-                input.move(output, n);
-            }
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-            this.output = output;
-        }
-    }
-
-    /**
-     * A simple k-merger that merges two inputs streams into a single
-     * output stream. The input streams are sorted prior to merging.
-     */
-    private static class SortingMerger implements Kmerger {
-        /** The "left" input buffer. */
-        private CircularBuffer<String> left;
-        /** The "right" input buffer. */
-        private CircularBuffer<String> right;
-        /** The output buffer. */
-        private CircularBuffer<String> output;
-        /** True if the input has already been sorted. */
-        private boolean sorted;
-
-        /**
-         * Creates a new instance of SortingMerger.
-         *
-         * @param  left    the left input buffer.
-         * @param  right   the right input buffer.
-         * @param  output  the output buffer.
-         */
-        public SortingMerger(CircularBuffer<String> left,
-                CircularBuffer<String> right,
-                CircularBuffer<String> output) {
-            this.left = left;
-            this.right = right;
-            this.output = output;
-        }
-
-        @Override
-        public int getK() {
-            return 2;
-        }
-
-        @Override
-        public CircularBuffer<String> getOutput() {
-            return output;
-        }
-
-        @Override
-        public void merge() {
-            // Lazily sort the input buffer the first time we're asked
-            // to produce output.
-            if (!sorted) {
-                String[] arr = new String[left.size()];
-                left.drain(arr, 0);
-                Quicksort.sort(arr);
-                left = new CircularBuffer<String>(arr, false);
-                arr = new String[right.size()];
-                right.drain(arr, 0);
-                Quicksort.sort(arr);
-                right = new CircularBuffer<String>(arr, false);
-                sorted = true;
-            }
-            // Output k^3 elements from the two buffers using a simple merge.
-            final int kpow3 = 8;
-            int written = 0;
-            while (written < kpow3 && !left.isEmpty() && !right.isEmpty()) {
-                if (left.peek().compareTo(right.peek()) < 0) {
-                    output.add(left.remove());
-                } else {
-                    output.add(right.remove());
-                }
-                written++;
-            }
-            int n = Math.min(left.size(), kpow3 - written);
-            if (n > 0) {
-                left.move(output, n);
-                written += n;
-            }
-            n = Math.min(right.size(), kpow3 - written);
-            if (n > 0) {
-                right.move(output, n);
-            }
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-            this.output = output;
-        }
-    }
-
-    /**
-     * A LeftMerger divides up the input into k^(1/2) groups each of size
-     * k^(1/2), creating additional mergers for those groups, and merging
-     * their output into a sngle buffer.
-     */
-    private static class LeftMerger implements Kmerger {
-        private final int k;
-        private final int kpow3;
-        private Comparable[] data;
-        private int lower;
-        private int upper;
-        private CircularBuffer<String> output;
-        /** The right k-merger for merging the k^(1/2) input streams. */
-        private final Kmerger R;
-        /** The left k^(1/2) k-mergers each of size k^(1/2). */
-        private final List<Kmerger> Li;
-
-        public LeftMerger(Comparable[] data, int lower, int upper) {
-            k = upper - lower;
-            kpow3 = k * k * k;
-            this.data = data;
-            this.lower = lower;
-            this.upper = upper;
-
-// TODO: what to do when k equals 1, 2, or 3?
-
-            int k3half = Math.round((float) Math.sqrt((double) kpow3));
-            // Without rounding the sqrt we risk having an infinite loop
-            // (e.g. sqrt(3) = 1, equals a 3-way merger, hence a loop).
-            int kroot = Math.round((float) Math.sqrt((double) k));
-            int twok3half = 2 * k3half;
-            int offset = lower;
-
-            // Set up the left mergers.
-            List<CircularBuffer<String>> buffers =
-                    new ArrayList<CircularBuffer<String>>(kroot + 1);
-            Li = new ArrayList<Kmerger>();
-            for (int ii = 1; ii < kroot; ii++) {
-                CircularBuffer<String> buffer = new CircularBuffer<String>(twok3half);
-                buffers.add(buffer);
-                Kmerger li = MergerFactory.createMerger(data, offset, offset + kroot);
-                li.setOutput(buffer);
-                Li.add(li);
-                offset += kroot;
-            }
-            if (upper > offset) {
-                CircularBuffer<String> buffer = new CircularBuffer<String>(twok3half);
-                buffers.add(buffer);
-                Kmerger li = MergerFactory.createMerger(data, offset, upper);
-                li.setOutput(buffer);
-                Li.add(li);
-            }
-
-// TODO: how to get output buffer for right merger?
-            // Build the right merger.
-            R = MergerFactory.createMerger(buffers, output);
-        }
-
-        @Override
-        public int getK() {
-            return k;
-        }
-
-        @Override
-        public CircularBuffer<String> getOutput() {
-            return output;
-        }
-
-        @Override
-        public void merge() {
-            throw new UnsupportedOperationException("Not supported yet.");
-            // TODO: output kpow3 elements
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-            this.output = output;
+            CircularBuffer<String> out = new CircularBuffer<String>(8);
+            Kmerger ma = new TwoWayMerger(m1, m2, out);
+            return new TwoWayMerger(m3, ma, output);
         }
     }
 
@@ -410,7 +174,7 @@ public class Funnelsort {
         /** The right k-merger for merging the k^(1/2) input streams. */
         private final Kmerger R;
         /** The left k^(1/2) input streams each of size k^(1/2). */
-        private final Map<CircularBuffer<String>, Kmerger> Li;
+        private final Map<CircularBuffer<String>, Kmerger> Li; // TODO: change to a list of Kmerger, use Kmerger.getOutput()
 
         /**
          * Creates a new instance of RightMerger.
@@ -429,9 +193,6 @@ public class Funnelsort {
                     new ArrayList<CircularBuffer<String>>(kroot + 1);
             int twok3half = 2 * k3half;
             int offset = 0;
-// XXX: seems this could be more efficient in handling small numbers of inputs,
-//      such that odd inputs are merged directly into the R merger without an
-//      intermediate "copy" merger
             Li = new HashMap<CircularBuffer<String>, Kmerger>();
             for (int ii = 1; ii < kroot; ii++) {
                 List<CircularBuffer<String>> li = inputs.subList(offset, offset + kroot);
@@ -446,21 +207,18 @@ public class Funnelsort {
                 buffers.add(buffer);
                 Li.put(buffer, MergerFactory.createMerger(li, buffer));
             }
-            if (kroot == 1) {
-                Kmerger merger = Li.get(buffers.get(0));
-                R = MergerFactory.createMerger(merger, output);
-            } else if (kroot == 2) {
+            if (kroot == 2) {
                 Kmerger left = Li.get(buffers.get(0));
                 Kmerger right = Li.get(buffers.get(1));
                 R = MergerFactory.createMerger(left, right, output);
+            } else if (kroot == 3) {
+                Kmerger m1 = Li.get(buffers.get(0));
+                Kmerger m2 = Li.get(buffers.get(1));
+                Kmerger m3 = Li.get(buffers.get(2));
+                R = MergerFactory.createMerger(m1, m2, m3, output);
             } else {
                 R = MergerFactory.createMerger(buffers, output);
             }
-        }
-
-        @Override
-        public int getK() {
-            return k;
         }
 
         @Override
@@ -483,88 +241,16 @@ public class Funnelsort {
                 R.merge();
             }
         }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-        }
     }
 
     /**
-     * A k-merger that simply pipes an input buffer to an output buffer,
-     * acting like a k-merger but not performing any merging.
-     */
-    private static class SingleMerger implements Kmerger {
-        /** The number of times to invoke the input merger. */
-        private final int k3half;
-        /** The "left" k-merger for populating the input buffer. */
-        private final Kmerger merger;
-        /** The input buffer. */
-        private final CircularBuffer<String> input;
-        /** The output buffer. */
-        private CircularBuffer<String> output;
-
-        /**
-         * Creates a new instance of SingleMerger.
-         *
-         * @param  input   the input merger.
-         * @param  output  the output buffer.
-         */
-        public SingleMerger(Kmerger merger,
-                CircularBuffer<String> output) {
-            this.merger = merger;
-            int k = merger.getK();
-            int kpow3 = k * k * k;
-            k3half = Math.round((float) Math.sqrt((double) kpow3));
-            int twok3half = 2 * k3half;
-            input = new CircularBuffer<String>(twok3half);
-            this.output = output;
-        }
-
-        @Override
-        public int getK() {
-            // Even though this is a single, it pretends to be a 2-way.
-            return 2;
-        }
-
-        @Override
-        public CircularBuffer<String> getOutput() {
-            return output;
-        }
-
-        @Override
-        public void merge() {
-            // Invoke the left merger to populate the input buffer.
-            if (input.size() < k3half) {
-                merger.merge();
-            }
-            // Copy k^3 elements from the input buffer to the output.
-            final int kpow3 = 8;
-            int n = Math.min(input.size(), kpow3);
-            if (n > 0) {
-                input.move(output, n);
-            }
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-            this.output = output;
-        }
-    }
-
-    /**
-     * A k-merger that merges two input buffers to an output buffer.
+     * A k-merger that merges the output of two k-mergers to a single output.
      */
     private static class TwoWayMerger implements Kmerger {
-        /** The number of times to invoke the input mergers. */
-        private int k3half;
         /** The "left" k-merger for populating the input buffer. */
         private Kmerger leftMerger;
         /** The "right" k-merger for populating the input buffer. */
         private Kmerger rightMerger;
-        /** The "left" input buffer. */
-        private CircularBuffer<String> leftBuffer;
-        /** The "right" input buffer. */
-        private CircularBuffer<String> rightBuffer;
         /** The output buffer. */
         private CircularBuffer<String> output;
 
@@ -579,21 +265,7 @@ public class Funnelsort {
                 CircularBuffer<String> output) {
             leftMerger = left;
             rightMerger = right;
-            int k = left.getK();
-            int kpow3 = k * k * k;
-            k3half = Math.round((float) Math.sqrt((double) kpow3));
-            int twok3half = 2 * k3half;
-            leftBuffer = new CircularBuffer<String>(twok3half);
-            k = left.getK();
-            kpow3 = k * k * k;
-            twok3half = 2 * Math.round((float) Math.sqrt((double) kpow3));
-            rightBuffer = new CircularBuffer<String>(twok3half);
             this.output = output;
-        }
-
-        @Override
-        public int getK() {
-            return 2;
         }
 
         @Override
@@ -603,10 +275,12 @@ public class Funnelsort {
 
         @Override
         public void merge() {
-            if (leftBuffer.size() < k3half) {
+            CircularBuffer<String> leftBuffer = leftMerger.getOutput();
+            if (leftBuffer.size() < 8) {
                 leftMerger.merge();
             }
-            if (rightBuffer.size() < k3half) {
+            CircularBuffer<String> rightBuffer = rightMerger.getOutput();
+            if (rightBuffer.size() < 8) {
                 rightMerger.merge();
             }
             // Output k^3 elements from the two buffers using a simple merge.
@@ -629,84 +303,6 @@ public class Funnelsort {
             if (n > 0) {
                 leftBuffer.move(output, n);
             }
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
-            this.output = output;
-        }
-    }
-
-    /**
-     * A form of intermediate merger that encapsulates whatever has been
-     * constructed by the factory to ensure the child mergers are invoked
-     * a sufficient number of times to produce the entire output.
-     */
-    private static class RootMerger implements Kmerger {
-        /** The size of this merger. */
-        private final int k;
-        /** The number of times to invoke the R merger to merge inputs. */
-        private final int k3half;
-        /** The right k-merger for merging the k^(1/2) input streams. */
-        private final Kmerger R;
-        /** The left k^(1/2) input streams each of size k^(1/2). */
-        private final Map<CircularBuffer<String>, Kmerger> Li;
-
-        public RootMerger(List<Kmerger> inputs, CircularBuffer<String> output) {
-            int sqrt_k = inputs.size();
-            k = sqrt_k * sqrt_k;
-            int kpow3 = k * k * k;
-            k3half = Math.round((float) Math.sqrt((double) kpow3));
-            int twok3half = 2 * k3half;
-            List<CircularBuffer<String>> buffers =
-                    new ArrayList<CircularBuffer<String>>(sqrt_k);
-            Li = new HashMap<CircularBuffer<String>, Kmerger>();
-            for (Kmerger merger : inputs) {
-                CircularBuffer<String> buffer = new CircularBuffer<String>(twok3half);
-                buffers.add(buffer);
-                merger.setOutput(buffer);
-                Li.put(buffer, merger);
-            }
-            if (sqrt_k == 1) {
-                Kmerger merger = Li.get(buffers.get(0));
-                R = MergerFactory.createMerger(merger, output);
-            } else if (sqrt_k == 2) {
-                Kmerger left = Li.get(buffers.get(0));
-                Kmerger right = Li.get(buffers.get(1));
-                R = MergerFactory.createMerger(left, right, output);
-            } else {
-                R = MergerFactory.createMerger(buffers, output);
-            }
-        }
-
-        @Override
-        public int getK() {
-            return k;
-        }
-
-        @Override
-        public CircularBuffer<String> getOutput() {
-            return R.getOutput();
-        }
-
-        @Override
-        public void merge() {
-            // Invoke the R merger k^(3/2) times to generate our output.
-            for (int ii = 0; ii < k3half; ii++) {
-                // Make sure all of the buffers are at least half full.
-                for (Map.Entry<CircularBuffer<String>, Kmerger> entry : Li.entrySet()) {
-                    CircularBuffer<String> buf = entry.getKey();
-                    if (buf.size() < k3half) {
-                        Kmerger lk = entry.getValue();
-                        lk.merge();
-                    }
-                }
-                R.merge();
-            }
-        }
-
-        @Override
-        public void setOutput(CircularBuffer<String> output) {
         }
     }
 }
