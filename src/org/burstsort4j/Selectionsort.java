@@ -36,7 +36,7 @@ public class Selectionsort {
      */
     public static <T extends Comparable<? super T>> void sort(T[] input,
             int low, int high) {
-        if (input == null || input.length == 0 || high <= low) {
+        if (input == null || input.length < 2 || high <= low) {
             return;
         }
 

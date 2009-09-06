@@ -34,7 +34,7 @@ public class Combsort {
      * @param  input  array of comparable objects to be sorted.
      */
     public static <T extends Comparable<? super T>> void sort(T[] input) {
-        if (input == null || input.length == 0) {
+        if (input == null || input.length < 2) {
             return;
         }
 

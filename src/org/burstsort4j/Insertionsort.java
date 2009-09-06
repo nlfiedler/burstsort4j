@@ -37,6 +37,10 @@ public class Insertionsort {
      * @param  high  high end of range to sort (inclusive).
      */
     public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
+        if (arr == null || arr.length < 2 || low < 0 || high <= low) {
+            return;
+        }
+
         for (int i = low + 1; i <= high; i++) {
             T tmp = arr[i];
             int j = i;
@@ -60,11 +64,8 @@ public class Insertionsort {
      * @param  depth    offset of first character in each string to compare.
      */
     public static void sort(CharSequence[] strings, int low, int high, int depth) {
-        if (strings == null) {
-            throw new IllegalArgumentException("strings must be non-null");
-        }
-        if (low < 0 || high < low || depth < 0) {
-            throw new IllegalArgumentException("indices out of bounds");
+        if (strings == null || low < 0 || high <= low || depth < 0) {
+            return;
         }
         for (int i = low + 1; i < high; i++) {
             for (int j = i; j > low; j--) {
