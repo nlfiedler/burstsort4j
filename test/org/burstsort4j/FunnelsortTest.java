@@ -70,7 +70,21 @@ public class FunnelsortTest {
         assertEquals("j", arr[9]);
     }
 
-//    @Test
+    @Test
+    public void testSmallReversed() {
+        try {
+            List<String> data = Tests.loadData();
+            data = data.subList(0, 100);
+            Collections.reverse(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            Funnelsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+    @Test
     public void testSmallShuffled() {
         try {
             List<String> data = Tests.loadData();

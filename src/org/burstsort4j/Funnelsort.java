@@ -393,12 +393,18 @@ public class Funnelsort {
                 rightMerger.merge();
             }
             // Output k^3 elements from the two buffers using a simple merge.
-            int count = kpow3;
+            int count = Math.min(kpow3, output.getCapacity() - output.size());
             while (count > 0 && !leftBuffer.isEmpty() && !rightBuffer.isEmpty()) {
                 if (leftBuffer.peek().compareTo(rightBuffer.peek()) < 0) {
                     output.add(leftBuffer.remove());
+                    if (leftBuffer.isEmpty() && leftMerger != null) {
+                        leftMerger.merge();
+                    }
                 } else {
                     output.add(rightBuffer.remove());
+                    if (rightBuffer.isEmpty() && rightMerger != null) {
+                        rightMerger.merge();
+                    }
                 }
                 count--;
             }
