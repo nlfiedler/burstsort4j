@@ -57,16 +57,15 @@ public class Quicksort {
     }
 
     /**
-     * Internal quicksort method that makes recursive calls.
-     * Uses median-of-three partitioning and a cutoff at which
-     * point insertion sort is used.
+     * Basic implementation of quicksort. Uses median-of-three partitioning
+     * and a cutoff at which point insertion sort is used.
      *
      * @param  <T>   type of comparable to be sorted.
      * @param  arr   an array of Comparable items.
      * @param  low   the left-most index of the subarray.
      * @param  high  the right-most index of the subarray.
      */
-    private static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
+    public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         if (low + THRESHOLD > high) {
             // Insertion sort for small partitions.
             Insertionsort.sort(arr, low, high);
