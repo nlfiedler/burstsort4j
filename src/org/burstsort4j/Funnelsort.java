@@ -26,6 +26,10 @@ import java.util.List;
  * Leisersen, Prokop, and Ramachandran in "Cache Oblivious Algorithms"
  * (the extended abstract, based on the thesis by Prokop).
  *
+ * <p><strong>This code is broken. It fails to output a correctly sorted
+ * list of inputs, probably because some internal merger is not pulling
+ * enough elements through the merger.</strong></p>
+ *
  * @author Nathan Fiedler
  */
 public class Funnelsort {

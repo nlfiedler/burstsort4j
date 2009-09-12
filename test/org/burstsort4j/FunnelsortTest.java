@@ -74,6 +74,7 @@ public class FunnelsortTest {
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
+// XXX: sheer dumb luck that this passes. Change the 100 to 173 and it fails.
             data = data.subList(0, 100);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
@@ -89,6 +90,7 @@ public class FunnelsortTest {
         try {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
+// XXX: sheer dumb luck that this passes. Change the 100 to 173 and it fails.
             data = data.subList(0, 100);
             String[] arr = data.toArray(new String[data.size()]);
             Funnelsort.sort(arr);
