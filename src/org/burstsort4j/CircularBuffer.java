@@ -135,6 +135,16 @@ public class CircularBuffer<E> implements Collection, Queue {
         return true;
     }
 
+    /**
+     * Returns the total number of elements this buffer can hold (the same
+     * value passed to the constructor).
+     *
+     * @return  buffer capacity.
+     */
+    public int capacity() {
+        return upper - lower;
+    }
+
     @Override
     public void clear() {
         start = lower;
@@ -204,16 +214,6 @@ public class CircularBuffer<E> implements Collection, Queue {
             throw new NoSuchElementException("buffer is empty");
         }
         return (E) buffer[start];
-    }
-
-    /**
-     * Returns the total number of elements this buffer can hold (the same
-     * value passed to the constructor).
-     *
-     * @return  buffer capacity.
-     */
-    public int getCapacity() {
-        return upper - lower;
     }
 
     @Override
@@ -321,6 +321,16 @@ public class CircularBuffer<E> implements Collection, Queue {
             start = lower;
         }
         return (E) o;
+    }
+
+    /**
+     * Returns the number of empty spaces within this buffer (i.e. how many
+     * times {@link #add(Object)} can be called before the buffer is full).
+     *
+     * @return  number of empty spaces in buffer.
+     */
+    public int remaining() {
+        return upper - lower - count;
     }
 
     @Override

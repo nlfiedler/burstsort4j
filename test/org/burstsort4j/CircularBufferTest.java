@@ -34,7 +34,7 @@ public class CircularBufferTest {
     public void testAdd() {
         CircularBuffer<String> instance = new CircularBuffer<String>(5);
         instance.add("abc123");
-        assertEquals(5, instance.getCapacity());
+        assertEquals(5, instance.capacity());
         assertEquals(1, instance.size());
         assertFalse(instance.isEmpty());
         assertFalse(instance.isFull());
@@ -113,7 +113,7 @@ public class CircularBufferTest {
         assertFalse(instance.isEmpty());
         assertTrue(instance.isFull());
         assertEquals(10, instance.size());
-        assertEquals(10, instance.getCapacity());
+        assertEquals(10, instance.capacity());
         for (int i = 5; !instance.isEmpty(); i++) {
             Integer v = instance.remove();
             assertEquals(i, v.intValue());
@@ -121,7 +121,7 @@ public class CircularBufferTest {
         assertTrue(instance.isEmpty());
         assertFalse(instance.isFull());
         assertEquals(0, instance.size());
-        assertEquals(10, instance.getCapacity());
+        assertEquals(10, instance.capacity());
     }
 
     @Test
