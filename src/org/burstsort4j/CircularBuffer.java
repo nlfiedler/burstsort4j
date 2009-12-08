@@ -39,9 +39,9 @@ import java.util.Queue;
 public class CircularBuffer<E> implements Collection, Queue {
     /** The circular buffer. */
     private final Object[] buffer;
-    /** Lowest usable position within the buffer. */
+    /** Lower limit within the buffer, equal to the first usable position. */
     private final int lower;
-    /** Highest usable position within the buffer. */
+    /** Upper limit within the buffer, just past the last usable position. */
     private final int upper;
     /** Offset of the first entry in the buffer. */
     private int start;
