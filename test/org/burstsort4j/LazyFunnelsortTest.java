@@ -289,7 +289,7 @@ public class LazyFunnelsortTest {
         assertEquals("j", arr[9]);
     }
 
-//    @Test
+    @Test
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -303,7 +303,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testSmallShuffled() {
         try {
             List<String> data = Tests.loadData();
@@ -331,7 +331,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testSorted() {
         try {
             List<String> data = Tests.loadData();
@@ -358,7 +358,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];

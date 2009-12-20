@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * An implementation of the lazy funnelsort algorithm as described by Brodal,
@@ -32,6 +34,7 @@ import java.util.Map;
  * @author Nathan Fiedler
  */
 public class LazyFunnelsort {
+
     /** Brodal, Fagerberg, and Vinther found through experimentation that
      * delegating to quicksort for arrays of size 400 or less improved
      * overall performance of funnelsort. */
@@ -219,22 +222,22 @@ public class LazyFunnelsort {
             }
         }
 
-        /**
-         * Creates a new instance of Kmerger to merge the input mergers.
-         *
-         * @param  mergers  input mergers to be merged into a single stream.
-         * @param  output   buffer to which merged results are written.
-         * @return  a Kmerger instance.
-         */
-        public static Kmerger createMergerMerger(List<Kmerger> mergers,
-                CircularBuffer<Comparable> output) {
-            int k = mergers.size();
-            if (k > 4) {
-                return new MergerMerger(output, mergers);
-            } else {
-                return new InsertionMerger(output, mergers);
-            }
-        }
+//        /**
+//         * Creates a new instance of Kmerger to merge the input mergers.
+//         *
+//         * @param  mergers  input mergers to be merged into a single stream.
+//         * @param  output   buffer to which merged results are written.
+//         * @return  a Kmerger instance.
+//         */
+//        public static Kmerger createMergerMerger(List<Kmerger> mergers,
+//                CircularBuffer<Comparable> output) {
+//            int k = mergers.size();
+//            if (k > 4) {
+//                return new MergerMerger(output, mergers);
+//            } else {
+//                return new InsertionMerger(output, mergers);
+//            }
+//        }
     }
 
     /**
@@ -242,7 +245,8 @@ public class LazyFunnelsort {
      * each of size k^(1/2), creating additional mergers for those
      * groups, and ultimately merging their output into a single buffer.
      */
-    private static class BufferMerger implements Kmerger {
+    private static class BufferMerger implements Kmerger, Observer {
+
         /** The output buffer for this merger. */
         private final CircularBuffer<Comparable> output;
         /** The right k-merger for merging the k^(1/2) input streams. */
@@ -259,24 +263,30 @@ public class LazyFunnelsort {
         public BufferMerger(List<CircularBuffer<Comparable>> inputs,
                 CircularBuffer<Comparable> output) {
             this.output = output;
+            output.addObserver(this);
             int k = inputs.size();
             int k3half = Math.round((float) Math.sqrt((double) k * k * k));
             // Rounding up avoids creating excessive numbers of mergers.
             int kroot = Math.round((float) Math.sqrt((double) k));
             int offset = 0;
             Li = new ArrayList<Kmerger>(kroot + 1);
+            List<CircularBuffer<Comparable>> buffers =
+                    new ArrayList<CircularBuffer<Comparable>>();
             for (int ii = 1; ii < kroot; ii++) {
                 List<CircularBuffer<Comparable>> li = inputs.subList(offset, offset + kroot);
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+                buffers.add(buffer);
                 Li.add(MergerFactory.createBufferMerger(li, buffer));
                 offset += kroot;
             }
             if (inputs.size() > offset) {
                 List<CircularBuffer<Comparable>> li = inputs.subList(offset, inputs.size());
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+                buffers.add(buffer);
                 Li.add(MergerFactory.createBufferMerger(li, buffer));
             }
-            R = MergerFactory.createMergerMerger(Li, output);
+//            R = MergerFactory.createMergerMerger(Li, output);
+            R = MergerFactory.createBufferMerger(buffers, output);
         }
 
         @Override
@@ -291,90 +301,96 @@ public class LazyFunnelsort {
 
         @Override
         public void merge() {
-            while (!output.isFull() && R.hasMore()) {
-                // Make sure all of the buffers are non-empty.
+            // Do not loop, just make one attempt to populate the output.
+            if (!output.isFull()) {
                 for (Kmerger merger : Li) {
-                    CircularBuffer<Comparable> buf = merger.getOutput();
-                    if (buf.isEmpty()) {
-                        merger.merge();
-                    }
+                    merger.merge();
                 }
                 R.merge();
             }
         }
+
+        @Override
+        public void update(Observable o, Object arg) {
+            // The buffer that we are observing has become empty,
+            // try to fill it again.
+            merge();
+        }
     }
 
-    /**
-     * A MergerMerger divides up the input mergers into k^(1/2) groups
-     * each of size k^(1/2), creating additional mergers for those
-     * groups, and ultimately merging their output into a single buffer.
-     */
-    private static class MergerMerger implements Kmerger {
-        /** The output buffer for this merger. */
-        private final CircularBuffer<Comparable> output;
-        /** The right k-merger for merging the k^(1/2) input streams. */
-        private final Kmerger R;
-        /** The left k^(1/2) input streams each of size k^(1/2). */
-        private final List<Kmerger> Li;
-
-        /**
-         * Creates a new instance of MergerMerger.
-         *
-         * @param  output   buffer to which merged results are written.
-         * @param  mergers  streams of sorted input to be merged.
-         */
-        public MergerMerger(CircularBuffer<Comparable> output, List<Kmerger> mergers) {
-            this.output = output;
-            int k = mergers.size();
-            int k3half = Math.round((float) Math.sqrt((double) k * k * k));
-            // Rounding up avoids creating excessive numbers of mergers.
-            int kroot = Math.round((float) Math.sqrt((double) k));
-            int offset = 0;
-            Li = new ArrayList<Kmerger>(kroot + 1);
-            for (int ii = 1; ii < kroot; ii++) {
-                List<Kmerger> li = mergers.subList(offset, offset + kroot);
-                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
-                Li.add(MergerFactory.createMergerMerger(li, buffer));
-                offset += kroot;
-            }
-            if (mergers.size() > offset) {
-                List<Kmerger> li = mergers.subList(offset, mergers.size());
-                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
-                Li.add(MergerFactory.createMergerMerger(li, buffer));
-            }
-            R = MergerFactory.createMergerMerger(Li, output);
-        }
-
-        @Override
-        public CircularBuffer<Comparable> getOutput() {
-            return R.getOutput();
-        }
-
-        @Override
-        public boolean hasMore() {
-            return R.hasMore();
-        }
-
-        @Override
-        public void merge() {
-            while (!output.isFull() && R.hasMore()) {
-                // Make sure all of the buffers are non-empty.
-                for (Kmerger merger : Li) {
-                    CircularBuffer<Comparable> buf = merger.getOutput();
-                    if (buf.isEmpty()) {
-                        merger.merge();
-                    }
-                }
-                R.merge();
-            }
-        }
-    }
+//    /**
+//     * A MergerMerger divides up the input mergers into k^(1/2) groups
+//     * each of size k^(1/2), creating additional mergers for those
+//     * groups, and ultimately merging their output into a single buffer.
+//     */
+//    private static class MergerMerger implements Kmerger {
+//
+//        /** The output buffer for this merger. */
+//        private final CircularBuffer<Comparable> output;
+//        /** The right k-merger for merging the k^(1/2) input streams. */
+//        private final Kmerger R;
+//        /** The left k^(1/2) input streams each of size k^(1/2). */
+//        private final List<Kmerger> Li;
+//
+//        /**
+//         * Creates a new instance of MergerMerger.
+//         *
+//         * @param  output   buffer to which merged results are written.
+//         * @param  mergers  streams of sorted input to be merged.
+//         */
+//        public MergerMerger(CircularBuffer<Comparable> output, List<Kmerger> mergers) {
+//            this.output = output;
+//            int k = mergers.size();
+//            int k3half = Math.round((float) Math.sqrt((double) k * k * k));
+//            // Rounding up avoids creating excessive numbers of mergers.
+//            int kroot = Math.round((float) Math.sqrt((double) k));
+//            int offset = 0;
+//            Li = new ArrayList<Kmerger>(kroot + 1);
+//            for (int ii = 1; ii < kroot; ii++) {
+//                List<Kmerger> li = mergers.subList(offset, offset + kroot);
+//                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+//                Li.add(MergerFactory.createMergerMerger(li, buffer));
+//                offset += kroot;
+//            }
+//            if (mergers.size() > offset) {
+//                List<Kmerger> li = mergers.subList(offset, mergers.size());
+//                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+//                Li.add(MergerFactory.createMergerMerger(li, buffer));
+//            }
+//            R = MergerFactory.createMergerMerger(Li, output);
+//        }
+//
+//        @Override
+//        public CircularBuffer<Comparable> getOutput() {
+//            return R.getOutput();
+//        }
+//
+//        @Override
+//        public boolean hasMore() {
+//            return R.hasMore();
+//        }
+//
+//        @Override
+//        public void merge() {
+//            while (!output.isFull() && R.hasMore()) {
+//                // Make sure all of the buffers are non-empty.
+//                for (Kmerger merger : Li) {
+//                    CircularBuffer<Comparable> buf = merger.getOutput();
+//                    if (buf.isEmpty()) {
+//                        merger.merge();
+//                    }
+//                }
+//                R.merge();
+//            }
+//        }
+//    }
 
     /**
      * A k-merger that merges multiple inputs, whether those are mergers or
      * buffers, or a mix of both, using an insertion d-way mergesort.
      */
-    private static class InsertionMerger implements Kmerger {
+    private static class InsertionMerger implements Kmerger, Observer {
+
         /** List of input buffers. */
         private List<CircularBuffer<Comparable>> buffers;
         /** Mergers associated with the circular buffers. Not all buffers
@@ -393,26 +409,27 @@ public class LazyFunnelsort {
                 CircularBuffer<Comparable> output) {
             this.buffers = new ArrayList<CircularBuffer<Comparable>>(buffers);
             this.output = output;
+            output.addObserver(this);
             mergers = Collections.emptyMap();
         }
 
-        /**
-         * Creates a new instance of InsertionMerger.
-         *
-         * @param  output   the output buffer.
-         * @param  mergers  the list of input mergers.
-         */
-        public InsertionMerger(CircularBuffer<Comparable> output,
-                List<Kmerger> mergers) {
-            this.output = output;
-            this.mergers = new HashMap<CircularBuffer<Comparable>, Kmerger>();
-            buffers = new ArrayList<CircularBuffer<Comparable>>();
-            for (Kmerger merger : mergers) {
-                CircularBuffer<Comparable> buffer = merger.getOutput();
-                buffers.add(buffer);
-                this.mergers.put(buffer, merger);
-            }
-        }
+//        /**
+//         * Creates a new instance of InsertionMerger.
+//         *
+//         * @param  output   the output buffer.
+//         * @param  mergers  the list of input mergers.
+//         */
+//        public InsertionMerger(CircularBuffer<Comparable> output,
+//                List<Kmerger> mergers) {
+//            this.output = output;
+//            this.mergers = new HashMap<CircularBuffer<Comparable>, Kmerger>();
+//            buffers = new ArrayList<CircularBuffer<Comparable>>();
+//            for (Kmerger merger : mergers) {
+//                CircularBuffer<Comparable> buffer = merger.getOutput();
+//                buffers.add(buffer);
+//                this.mergers.put(buffer, merger);
+//            }
+//        }
 
         @Override
         public CircularBuffer<Comparable> getOutput() {
@@ -540,6 +557,12 @@ public class LazyFunnelsort {
                     }
                 }
             }
+        }
+
+        @Override
+        public void update(Observable o, Object arg) {
+            // Attempt to populate the recently emptied output buffer.
+            merge();
         }
     }
 }
