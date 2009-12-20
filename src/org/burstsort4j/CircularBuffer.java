@@ -16,12 +16,13 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Queue;
 
 /**
@@ -37,6 +38,9 @@ import java.util.Queue;
  * @author Nathan Fiedler
  */
 public class CircularBuffer<E> implements Collection, Queue {
+
+    /** Observable for notifying listeners of changes. */
+    private final BufferObservable observable;
     /** The circular buffer. */
     private final Object[] buffer;
     /** Lower limit within the buffer, equal to the first usable position. */
@@ -57,6 +61,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      * @param  capacity  maximum number of valid elements to contain.
      */
     public CircularBuffer(int capacity) {
+        observable = new BufferObservable(this);
         buffer = new Object[capacity];
         lower = 0;
         upper = capacity;
@@ -99,6 +104,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      *                  otherwise the given array will be used as-is.
      */
     public CircularBuffer(E[] initial, int offset, int count, boolean copy) {
+        observable = new BufferObservable(this);
         if (copy) {
             buffer = new Object[count];
             System.arraycopy(initial, offset, buffer, 0, count);
@@ -133,6 +139,21 @@ public class CircularBuffer<E> implements Collection, Queue {
             add(i.next());
         }
         return true;
+    }
+
+    /**
+     * Adds an observer to the set of observers for this object, provided
+     * that it is not the same as some observer already in the set. The
+     * order in which notifications will be delivered to multiple observers
+     * is not specified. See the class comment.
+     *
+     * <p>The {@code Observer} will be notified when this buffer becomes
+     * empty (that is, the last element is removed).</p>
+     *
+     * @param  o  an observer to be added.
+     */
+    public void addObserver(Observer o) {
+        observable.addObserver(o);
     }
 
     /**
@@ -205,6 +226,7 @@ public class CircularBuffer<E> implements Collection, Queue {
         start = lower;
         end = lower;
         count = 0;
+        observable.setAndNotify();
     }
 
     @Override
@@ -285,6 +307,9 @@ public class CircularBuffer<E> implements Collection, Queue {
         }
         sink.count += n;
         count -= n;
+        if (count == 0) {
+            observable.setAndNotify();
+        }
     }
 
     @Override
@@ -305,6 +330,9 @@ public class CircularBuffer<E> implements Collection, Queue {
         if (start == upper) {
             start = lower;
         }
+        if (count == 0) {
+            observable.setAndNotify();
+        }
         return (E) o;
     }
 
@@ -320,7 +348,20 @@ public class CircularBuffer<E> implements Collection, Queue {
         if (start == upper) {
             start = lower;
         }
+        if (count == 0) {
+            observable.setAndNotify();
+        }
         return (E) o;
+    }
+
+    /**
+     * Deletes an observer from the set of observers of this object.
+     * Passing {@code null} to this method will have no effect. 
+     *
+     * @param  o  the observer to be removed.
+     */
+    public void removeObserver(Observer o) {
+        observable.deleteObserver(o);
     }
 
     /**
@@ -361,5 +402,30 @@ public class CircularBuffer<E> implements Collection, Queue {
     @Override
     public int size() {
         return count;
+    }
+
+    /**
+     * An {@code Observable} that makes it convenient to set the state as
+     * changed and notify the listeners, passing them a reference to the
+     * CircularBuffer associated with this instance.
+     */
+    private static class BufferObservable extends Observable {
+        /** The buffer whose state changes from time to time. */
+        private CircularBuffer buffer;
+
+        /**
+         * @param  buffer  circular buffer to send to listeners.
+         */
+        public BufferObservable(CircularBuffer buffer) {
+            this.buffer = buffer;
+        }
+
+        /**
+         * Set the observable state to changed and notify listeners.
+         */
+        public void setAndNotify() {
+            setChanged();
+            notifyObservers(buffer);
+        }
     }
 }

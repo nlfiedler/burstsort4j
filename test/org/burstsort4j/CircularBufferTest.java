@@ -16,10 +16,11 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
 import java.util.NoSuchElementException;
+import java.util.Observable;
+import java.util.Observer;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -442,5 +443,61 @@ public class CircularBufferTest {
         instance.add("3");
         assertEquals(6, instance.size());
         assertTrue(instance.isFull());
+    }
+
+    @Test
+    public void testObserver() {
+        CircularBuffer<String> instance = new CircularBuffer<String>(3);
+        instance.add("1");
+        instance.add("2");
+        instance.add("3");
+        assertTrue(instance.isFull());
+        BufferObserver bo = new BufferObserver();
+        instance.addObserver(bo);
+        instance.poll();
+        assertEquals(0, bo.count());
+        instance.poll();
+        instance.poll();
+        assertTrue(instance.isEmpty());
+        assertEquals(1, bo.count());
+        instance.add("1");
+        instance.add("2");
+        instance.add("3");
+        CircularBuffer<String> sink = new CircularBuffer<String>(3);
+        instance.move(sink, 3);
+        assertEquals(2, bo.count());
+        instance.add("1");
+        instance.remove();
+        assertEquals(3, bo.count());
+        sink.clear();
+        instance.add("1");
+        instance.drain(sink);
+        assertEquals(4, bo.count());
+        sink.clear();
+        instance.add("1");
+        instance.add("2");
+        instance.add("3");
+        String[] strs = new String[5];
+        instance.drain(strs, 2);
+        assertEquals(5, bo.count());
+    }
+
+    /**
+     * Used for testing the Observer support in CircularBuffer.
+     */
+    private static class BufferObserver implements Observer {
+        private int count;
+
+        /**
+         * @return  number of times observer has been updated.
+         */
+        public int count() {
+            return count;
+        }
+
+        @Override
+        public void update(Observable o, Object arg) {
+            count++;
+        }
     }
 }
