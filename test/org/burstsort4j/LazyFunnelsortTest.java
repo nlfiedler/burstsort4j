@@ -16,7 +16,6 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
 import java.io.IOException;
@@ -71,8 +70,8 @@ public class LazyFunnelsortTest {
     @Test
     public void test_InsertionMerge_Repeated() {
         String[] arr = new String[25000];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, seed);
         List<String> data = new ArrayList<String>();
         for (String s : arr) {
@@ -84,8 +83,8 @@ public class LazyFunnelsortTest {
     @Test
     public void test_InsertionMerge_RepeatedCycle() {
         String[] strs = new String[100];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         for (int i = 0, l = 1; i < strs.length; i++, l++) {
             strs[i] = seed.substring(0, l);
         }
@@ -103,29 +102,34 @@ public class LazyFunnelsortTest {
      * @param  data  data to use for testing.
      */
     private void test_InsertionMerge(List<String> data) {
-        // Ensure data size is a multiple of four to make debugging easier.
-        if (data.size() < 25000) {
-            throw new IllegalArgumentException("input too small");
-        }
-        if (data.size() > 25000) {
-            data = data.subList(0, 25000);
-        }
+        // Test using different numbers of partitions.
+        test_InsertionMerge(data, 4);
+        test_InsertionMerge(data, 8);
+        test_InsertionMerge(data, 16);
+        test_InsertionMerge(data, 21);
+    }
+
+    /**
+     * Tests the insertion d-way merge algorithm for correctness using
+     * the given data.
+     *
+     * @param  data        data to use for testing (will not be modified).
+     * @param  partitions  number of partitions to create, sort and merge
+     */
+    private void test_InsertionMerge(List<String> data, int partitions) {
         String[] arr = data.toArray(new String[data.size()]);
         // Split up the inputs for the insertion d-way merger.
         List<CircularBuffer<Comparable>> inputs = new ArrayList<CircularBuffer<Comparable>>();
-        int size = arr.length / 4;
+        int size = arr.length / partitions;
         int offset = 0;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
+        while (offset < arr.length) {
+            if (offset + size > arr.length) {
+                size = arr.length - offset;
+            }
+            Arrays.sort(arr, offset, offset + size);
+            inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
+            offset += size;
+        }
         CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(arr.length);
         // Test the merger.
         LazyFunnelsort.insertionMerge(inputs, output);
@@ -139,57 +143,57 @@ public class LazyFunnelsortTest {
     }
 
     @Test
-    public void test_InsertionMerger_Dictwords() {
+    public void test_Mergers_Dictwords() {
         try {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
-            test_InsertionMerger(data);
+            test_Mergers(data);
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
     }
 
     @Test
-    public void test_InsertionMerger_Sorted() {
+    public void test_Mergers_Sorted() {
         try {
             List<String> data = Tests.loadData();
             Collections.sort(data);
-            test_InsertionMerger(data);
+            test_Mergers(data);
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
     }
 
     @Test
-    public void test_InsertionMerger_Reversed() {
+    public void test_Mergers_Reversed() {
         try {
             List<String> data = Tests.loadData();
             Collections.sort(data);
             Collections.reverse(data);
-            test_InsertionMerger(data);
+            test_Mergers(data);
         } catch (IOException ioe) {
             fail(ioe.toString());
         }
     }
 
     @Test
-    public void test_InsertionMerger_Repeated() {
+    public void test_Mergers_Repeated() {
         String[] arr = new String[25000];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, seed);
         List<String> data = new ArrayList<String>();
         for (String s : arr) {
             data.add(s);
         }
-        test_InsertionMerger(data);
+        test_Mergers(data);
     }
 
     @Test
-    public void test_InsertionMerger_RepeatedCycle() {
+    public void test_Mergers_RepeatedCycle() {
         String[] strs = new String[100];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         for (int i = 0, l = 1; i < strs.length; i++, l++) {
             strs[i] = seed.substring(0, l);
         }
@@ -197,42 +201,48 @@ public class LazyFunnelsortTest {
         for (int c = 25000, i = 0; c > 0; i++, c--) {
             data.add(strs[i % strs.length]);
         }
-        test_InsertionMerger(data);
+        test_Mergers(data);
     }
 
     /**
-     * Tests the insertion d-way merge algorithm for correctness using
-     * the given data.
+     * Tests the merger implementations for correctness using the given
+     * data. This only tests the case where the inputs are circular buffers.
      *
      * @param  data  data to use for testing.
      */
-    private void test_InsertionMerger(List<String> data) {
-        // Ensure data size is a multiple of four to make debugging easier.
-        if (data.size() < 25000) {
-            throw new IllegalArgumentException("input too small");
-        }
-        if (data.size() > 25000) {
-            data = data.subList(0, 25000);
-        }
+    private void test_Mergers(List<String> data) {
+        // Test using different numbers of partitions.
+        test_Mergers(data, 4);
+        test_Mergers(data, 8);
+        test_Mergers(data, 16);
+        test_Mergers(data, 21);
+    }
+
+    /**
+     * Tests the merger implementations for correctness using the given
+     * data. This only tests the case where the inputs are circular buffers.
+     *
+     * @param  data        data to use for testing (will not be modified).
+     * @param  partitions  number of partitions to create, sort and merge
+     */
+    private void test_Mergers(List<String> data, int partitions) {
         String[] arr = data.toArray(new String[data.size()]);
         // Split up the inputs for the insertion d-way merger.
         List<CircularBuffer<Comparable>> inputs = new ArrayList<CircularBuffer<Comparable>>();
-        int size = arr.length / 4;
+        int size = arr.length / partitions;
         int offset = 0;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
-        offset += size;
-        Arrays.sort(arr, offset, offset + size);
-        inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
+        while (offset < arr.length) {
+            if (offset + size > arr.length) {
+                size = arr.length - offset;
+            }
+            Arrays.sort(arr, offset, offset + size);
+            inputs.add(new CircularBuffer<Comparable>(arr, offset, size, false));
+            offset += size;
+        }
         CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(arr.length);
         // Test the merger.
-        LazyFunnelsort.Kmerger merger = new LazyFunnelsort.InsertionMerger(inputs, output);
+        LazyFunnelsort.Kmerger merger = LazyFunnelsort.MergerFactory.createBufferMerger(
+                inputs, output);
         merger.merge();
         String[] results = new String[arr.length];
         output.drain(results, 0);
@@ -247,25 +257,25 @@ public class LazyFunnelsortTest {
     public void testArguments() {
         LazyFunnelsort.sort(null);
         LazyFunnelsort.sort(new String[0]);
-        String[] arr = new String[] { "a" };
+        String[] arr = new String[]{"a"};
         LazyFunnelsort.sort(arr);
-        arr = new String[] { "b", "a" };
+        arr = new String[]{"b", "a"};
         LazyFunnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
-        arr = new String[] { "c", "b", "a" };
+        arr = new String[]{"c", "b", "a"};
         LazyFunnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
         assertEquals("c", arr[2]);
-        arr = new String[] { "c", "d", "b", "e", "a" };
+        arr = new String[]{"c", "d", "b", "e", "a"};
         LazyFunnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
         assertEquals("c", arr[2]);
         assertEquals("d", arr[3]);
         assertEquals("e", arr[4]);
-        arr = new String[] { "j", "f", "c", "b", "i", "g", "a", "d", "e", "h" };
+        arr = new String[]{"j", "f", "c", "b", "i", "g", "a", "d", "e", "h"};
         LazyFunnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
@@ -279,7 +289,7 @@ public class LazyFunnelsortTest {
         assertEquals("j", arr[9]);
     }
 
-    @Test
+//    @Test
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -352,8 +362,8 @@ public class LazyFunnelsortTest {
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
-        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, STR);
         LazyFunnelsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, STR));
@@ -362,8 +372,8 @@ public class LazyFunnelsortTest {
 //    @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         for (int i = 0, l = 1; i < strs.length; i++, l++) {
             strs[i] = seed.substring(0, l);
         }
