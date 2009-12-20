@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.burstsort4j.LazyFunnelsort.Kmerger;
+import org.burstsort4j.LazyFunnelsort.MergerFactory;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -215,7 +217,8 @@ public class LazyFunnelsortTest {
         test_Mergers(data, 4);
         test_Mergers(data, 8);
         test_Mergers(data, 16);
-        test_Mergers(data, 21);
+        test_Mergers(data, 32);
+        test_Mergers(data, 64);
     }
 
     /**
@@ -241,8 +244,7 @@ public class LazyFunnelsortTest {
         }
         CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(arr.length);
         // Test the merger.
-        LazyFunnelsort.Kmerger merger = LazyFunnelsort.MergerFactory.createBufferMerger(
-                inputs, output);
+        Kmerger merger = MergerFactory.createMerger(inputs, output);
         merger.merge();
         String[] results = new String[arr.length];
         output.drain(results, 0);
@@ -317,7 +319,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testDictWords() {
         try {
             // Use the large dictionary rather than the trivial one.
@@ -344,7 +346,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -369,7 +371,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isRepeated(arr, STR));
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testRepeatedCycle() {
         String[] strs = new String[100];
         String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -386,7 +388,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testRandom() {
         List<String> data = Tests.generateData(1000000, 100);
         String[] arr = data.toArray(new String[data.size()]);
@@ -394,7 +396,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testHamlet() {
         try {
             List<String> data = Tests.loadData("hamletwords");
@@ -407,7 +409,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test
+//    @Test // TODO: test not yet working
     public void testDictCalls() {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);

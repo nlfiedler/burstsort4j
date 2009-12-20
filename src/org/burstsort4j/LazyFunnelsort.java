@@ -19,10 +19,7 @@
 package org.burstsort4j;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -50,68 +47,64 @@ public class LazyFunnelsort {
     @SuppressWarnings("unchecked")
     public static void insertionMerge(List<CircularBuffer<Comparable>> inputs,
             CircularBuffer<Comparable> output) {
-        Kmerger merger = new InsertionMerger(inputs, output);
-        merger.merge();
-// Below is the original implementation for simply merging sorted inputs.
-//        // Set up the array (d) of input buffers.
-//        CircularBuffer<Comparable>[] d = new CircularBuffer[inputs.size()];
-//        d = inputs.toArray(d);
-//
-//        // Perform an insertion sort of the buffers using the leading values.
-//        for (int i = 1; i < d.length; i++) {
-//            CircularBuffer<Comparable> tmp = d[i];
-//            int j = i;
-//            while (j > 0 && tmp.peek().compareTo(d[j - 1].peek()) < 0) {
-//                d[j] = d[j - 1];
-//                j--;
-//            }
-//            d[j] = tmp;
-//        }
-//
-//        // While there are streams to be processed...
-//        while (d.length > 0) {
-//            if (d.length == 1) {
-//                // Copy remainder of last stream to output.
-//                d[0].drain(output);
-//                d = new CircularBuffer[0];
-//            } else if (d.length == 2) {
-//                // With only two streams, perform a faster merge.
-//                CircularBuffer<Comparable> a = d[0];
-//                CircularBuffer<Comparable> b = d[1];
-//                while (!a.isEmpty() && !b.isEmpty()) {
-//                    if (a.peek().compareTo(b.peek()) < 0) {
-//                        output.add(a.remove());
-//                    } else {
-//                        output.add(b.remove());
-//                    }
-//                }
-//                if (!a.isEmpty()) {
-//                    a.drain(output);
-//                }
-//                if (!b.isEmpty()) {
-//                    b.drain(output);
-//                }
-//                d = new CircularBuffer[0];
-//            } else {
-//                output.add(d[0].remove());
-//                if (d[0].isEmpty()) {
-//                    // This stream has been exhausted, remove it from the pool.
-//                    CircularBuffer[] td = new CircularBuffer[d.length - 1];
-//                    System.arraycopy(d, 1, td, 0, td.length);
-//                    d = td;
-//                } else {
-//                    // Insert new candidate into correct position in d.
-//                    CircularBuffer<Comparable> t = d[0];
-//                    Comparable s = t.peek();
-//                    int j = 1;
-//                    while (j < d.length && s.compareTo(d[j].peek()) > 0) {
-//                        d[j - 1] = d[j];
-//                        j++;
-//                    }
-//                    d[j - 1] = t;
-//                }
-//            }
-//        }
+        CircularBuffer<Comparable>[] d = new CircularBuffer[inputs.size()];
+        d = inputs.toArray(d);
+
+        // Perform an insertion sort of the buffers using the leading values.
+        for (int i = 1; i < d.length; i++) {
+            CircularBuffer<Comparable> tmp = d[i];
+            int j = i;
+            while (j > 0 && tmp.peek().compareTo(d[j - 1].peek()) < 0) {
+                d[j] = d[j - 1];
+                j--;
+            }
+            d[j] = tmp;
+        }
+
+        // While there are streams to be processed...
+        while (d.length > 0) {
+            if (d.length == 1) {
+                // Copy remainder of last stream to output.
+                d[0].drain(output);
+                d = new CircularBuffer[0];
+            } else if (d.length == 2) {
+                // With only two streams, perform a faster merge.
+                CircularBuffer<Comparable> a = d[0];
+                CircularBuffer<Comparable> b = d[1];
+                while (!a.isEmpty() && !b.isEmpty()) {
+                    if (a.peek().compareTo(b.peek()) < 0) {
+                        output.add(a.remove());
+                    } else {
+                        output.add(b.remove());
+                    }
+                }
+                if (!a.isEmpty()) {
+                    a.drain(output);
+                }
+                if (!b.isEmpty()) {
+                    b.drain(output);
+                }
+                d = new CircularBuffer[0];
+            } else {
+                output.add(d[0].remove());
+                if (d[0].isEmpty()) {
+                    // This stream has been exhausted, remove it from the pool.
+                    CircularBuffer[] td = new CircularBuffer[d.length - 1];
+                    System.arraycopy(d, 1, td, 0, td.length);
+                    d = td;
+                } else {
+                    // Insert new candidate into correct position in d.
+                    CircularBuffer<Comparable> t = d[0];
+                    Comparable s = t.peek();
+                    int j = 1;
+                    while (j < d.length && s.compareTo(d[j].peek()) > 0) {
+                        d[j - 1] = d[j];
+                        j++;
+                    }
+                    d[j - 1] = t;
+                }
+            }
+        }
     }
 
     /**
@@ -164,7 +157,7 @@ public class LazyFunnelsort {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, leftover, false));
             }
             CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(count);
-            Kmerger merger = MergerFactory.createBufferMerger(inputs, output);
+            Kmerger merger = MergerFactory.createMerger(inputs, output);
             merger.merge();
             output.drain(strings, offset);
         } else {
@@ -178,20 +171,6 @@ public class LazyFunnelsort {
      * stream, sorting the elements in the process.
      */
     static interface Kmerger {
-
-        /**
-         * Return the reference to this merger's output buffer.
-         *
-         * @return  output buffer for this merger, or null if none.
-         */
-        CircularBuffer<Comparable> getOutput();
-
-        /**
-         * Indicates if this merger has more elements to output.
-         *
-         * @return  true if more elements are available, false otherwise.
-         */
-        boolean hasMore();
 
         /**
          * Merges k^3 elements from the inputs and writes them to the output.
@@ -211,7 +190,7 @@ public class LazyFunnelsort {
          * @param  output  buffer to which merged results are written.
          * @return  a Kmerger instance.
          */
-        public static Kmerger createBufferMerger(
+        public static Kmerger createMerger(
                 List<CircularBuffer<Comparable>> inputs,
                 CircularBuffer<Comparable> output) {
             int k = inputs.size();
@@ -221,23 +200,6 @@ public class LazyFunnelsort {
                 return new InsertionMerger(inputs, output);
             }
         }
-
-//        /**
-//         * Creates a new instance of Kmerger to merge the input mergers.
-//         *
-//         * @param  mergers  input mergers to be merged into a single stream.
-//         * @param  output   buffer to which merged results are written.
-//         * @return  a Kmerger instance.
-//         */
-//        public static Kmerger createMergerMerger(List<Kmerger> mergers,
-//                CircularBuffer<Comparable> output) {
-//            int k = mergers.size();
-//            if (k > 4) {
-//                return new MergerMerger(output, mergers);
-//            } else {
-//                return new InsertionMerger(output, mergers);
-//            }
-//        }
     }
 
     /**
@@ -276,27 +238,16 @@ public class LazyFunnelsort {
                 List<CircularBuffer<Comparable>> li = inputs.subList(offset, offset + kroot);
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
                 buffers.add(buffer);
-                Li.add(MergerFactory.createBufferMerger(li, buffer));
+                Li.add(MergerFactory.createMerger(li, buffer));
                 offset += kroot;
             }
             if (inputs.size() > offset) {
                 List<CircularBuffer<Comparable>> li = inputs.subList(offset, inputs.size());
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
                 buffers.add(buffer);
-                Li.add(MergerFactory.createBufferMerger(li, buffer));
+                Li.add(MergerFactory.createMerger(li, buffer));
             }
-//            R = MergerFactory.createMergerMerger(Li, output);
-            R = MergerFactory.createBufferMerger(buffers, output);
-        }
-
-        @Override
-        public CircularBuffer<Comparable> getOutput() {
-            return output;
-        }
-
-        @Override
-        public boolean hasMore() {
-            return R.hasMore();
+            R = MergerFactory.createMerger(buffers, output);
         }
 
         @Override
@@ -318,84 +269,14 @@ public class LazyFunnelsort {
         }
     }
 
-//    /**
-//     * A MergerMerger divides up the input mergers into k^(1/2) groups
-//     * each of size k^(1/2), creating additional mergers for those
-//     * groups, and ultimately merging their output into a single buffer.
-//     */
-//    private static class MergerMerger implements Kmerger {
-//
-//        /** The output buffer for this merger. */
-//        private final CircularBuffer<Comparable> output;
-//        /** The right k-merger for merging the k^(1/2) input streams. */
-//        private final Kmerger R;
-//        /** The left k^(1/2) input streams each of size k^(1/2). */
-//        private final List<Kmerger> Li;
-//
-//        /**
-//         * Creates a new instance of MergerMerger.
-//         *
-//         * @param  output   buffer to which merged results are written.
-//         * @param  mergers  streams of sorted input to be merged.
-//         */
-//        public MergerMerger(CircularBuffer<Comparable> output, List<Kmerger> mergers) {
-//            this.output = output;
-//            int k = mergers.size();
-//            int k3half = Math.round((float) Math.sqrt((double) k * k * k));
-//            // Rounding up avoids creating excessive numbers of mergers.
-//            int kroot = Math.round((float) Math.sqrt((double) k));
-//            int offset = 0;
-//            Li = new ArrayList<Kmerger>(kroot + 1);
-//            for (int ii = 1; ii < kroot; ii++) {
-//                List<Kmerger> li = mergers.subList(offset, offset + kroot);
-//                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
-//                Li.add(MergerFactory.createMergerMerger(li, buffer));
-//                offset += kroot;
-//            }
-//            if (mergers.size() > offset) {
-//                List<Kmerger> li = mergers.subList(offset, mergers.size());
-//                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
-//                Li.add(MergerFactory.createMergerMerger(li, buffer));
-//            }
-//            R = MergerFactory.createMergerMerger(Li, output);
-//        }
-//
-//        @Override
-//        public CircularBuffer<Comparable> getOutput() {
-//            return R.getOutput();
-//        }
-//
-//        @Override
-//        public boolean hasMore() {
-//            return R.hasMore();
-//        }
-//
-//        @Override
-//        public void merge() {
-//            while (!output.isFull() && R.hasMore()) {
-//                // Make sure all of the buffers are non-empty.
-//                for (Kmerger merger : Li) {
-//                    CircularBuffer<Comparable> buf = merger.getOutput();
-//                    if (buf.isEmpty()) {
-//                        merger.merge();
-//                    }
-//                }
-//                R.merge();
-//            }
-//        }
-//    }
-
     /**
-     * A k-merger that merges multiple inputs, whether those are mergers or
-     * buffers, or a mix of both, using an insertion d-way mergesort.
+     * A k-merger that merges multiple inputs, using an efficient
+     * insertion d-way mergesort.
      */
     private static class InsertionMerger implements Kmerger, Observer {
 
         /** List of input buffers. */
         private List<CircularBuffer<Comparable>> buffers;
-        /** Mergers associated with the circular buffers. Not all buffers
-         * will necessarily have a merger. */
-        private Map<CircularBuffer<Comparable>, Kmerger> mergers;
         /** The output buffer. */
         private CircularBuffer<Comparable> output;
 
@@ -407,48 +288,10 @@ public class LazyFunnelsort {
          */
         public InsertionMerger(List<CircularBuffer<Comparable>> buffers,
                 CircularBuffer<Comparable> output) {
+            // Copy the input list so it can be modified during merging.
             this.buffers = new ArrayList<CircularBuffer<Comparable>>(buffers);
             this.output = output;
             output.addObserver(this);
-            mergers = Collections.emptyMap();
-        }
-
-//        /**
-//         * Creates a new instance of InsertionMerger.
-//         *
-//         * @param  output   the output buffer.
-//         * @param  mergers  the list of input mergers.
-//         */
-//        public InsertionMerger(CircularBuffer<Comparable> output,
-//                List<Kmerger> mergers) {
-//            this.output = output;
-//            this.mergers = new HashMap<CircularBuffer<Comparable>, Kmerger>();
-//            buffers = new ArrayList<CircularBuffer<Comparable>>();
-//            for (Kmerger merger : mergers) {
-//                CircularBuffer<Comparable> buffer = merger.getOutput();
-//                buffers.add(buffer);
-//                this.mergers.put(buffer, merger);
-//            }
-//        }
-
-        @Override
-        public CircularBuffer<Comparable> getOutput() {
-            return output;
-        }
-
-        @Override
-        public boolean hasMore() {
-            for (CircularBuffer<Comparable> buffer : buffers) {
-                if (!buffer.isEmpty()) {
-                    return true;
-                }
-            }
-            for (Kmerger merger : mergers.values()) {
-                if (merger.hasMore()) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         @Override
@@ -468,82 +311,41 @@ public class LazyFunnelsort {
                 buffers.set(j, tmp);
             }
 
-// TODO: code would be a lot simpler if the merger associated with a buffer was
-//       registered as a listener on that buffer, and the buffer would send an
-//       event when it became empty, thus the merger could automatically add
-//       content to the buffer without being explicitly told to in the code below...
-
             // While output is not full...
             while (!output.isFull() && !buffers.isEmpty()) {
                 if (buffers.size() == 1) {
                     // Copy remainder of last stream to output.
                     CircularBuffer<Comparable> t = buffers.get(0);
-                    Kmerger merger = mergers.get(t);
-                    while (!output.isFull() && !t.isEmpty()) {
-                        int n = Math.min(t.size(), output.remaining());
+                    int n = Math.min(t.size(), output.remaining());
+                    if (n > 0) {
                         t.move(output, n);
-                        if (t.isEmpty() && merger != null) {
-                            merger.merge();
+                        if (t.isEmpty()) {
+                            buffers.remove(0);
                         }
-                    }
-                    if (t.isEmpty()) {
-                        buffers.remove(0);
-                        mergers.remove(t);
                     }
                 } else if (buffers.size() == 2) {
                     // With only two streams, perform a faster merge.
                     CircularBuffer<Comparable> a = buffers.get(0);
                     CircularBuffer<Comparable> b = buffers.get(1);
-                    Kmerger am = mergers.get(a);
-                    Kmerger bm = mergers.get(b);
                     while (!output.isFull() && !a.isEmpty() && !b.isEmpty()) {
                         if (a.peek().compareTo(b.peek()) < 0) {
                             output.add(a.remove());
-                            if (a.isEmpty() && am != null) {
-                                am.merge();
-                            }
                         } else {
                             output.add(b.remove());
-                            if (b.isEmpty() && bm != null) {
-                                bm.merge();
-                            }
-                        }
-                    }
-                    while (!output.isFull() && !a.isEmpty()) {
-                        int n = Math.min(a.size(), output.remaining());
-                        a.move(output, n);
-                        if (a.isEmpty() && am != null) {
-                            am.merge();
-                        }
-                    }
-                    while (!output.isFull() && !b.isEmpty()) {
-                        int n = Math.min(b.size(), output.remaining());
-                        b.move(output, n);
-                        if (b.isEmpty() && bm != null) {
-                            bm.merge();
                         }
                     }
                     if (b.isEmpty()) {
                         buffers.remove(1);
-                        mergers.remove(b);
                     }
                     if (a.isEmpty()) {
                         buffers.remove(0);
-                        mergers.remove(a);
                     }
                 } else {
                     CircularBuffer<Comparable> t = buffers.get(0);
                     output.add(t.remove());
                     if (t.isEmpty()) {
-                        Kmerger merger = mergers.get(t);
-                        if (merger != null) {
-                            merger.merge();
-                        }
-                        if (t.isEmpty()) {
-                            // This stream has been exhausted.
-                            buffers.remove(0);
-                            mergers.remove(t);
-                        }
+                        // This stream has been exhausted.
+                        buffers.remove(0);
                     } else {
                         // Insert new candidate into correct position in d.
                         Comparable s = t.peek();
