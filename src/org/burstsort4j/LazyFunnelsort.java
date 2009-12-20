@@ -227,11 +227,12 @@ public class LazyFunnelsort {
             this.output = output;
             output.addObserver(this);
             int k = inputs.size();
+// TODO: consider doubling k3half (2*k^(3/2) is the original algorithm value)
             int k3half = Math.round((float) Math.sqrt((double) k * k * k));
             // Rounding up avoids creating excessive numbers of mergers.
             int kroot = Math.round((float) Math.sqrt((double) k));
             int offset = 0;
-            Li = new ArrayList<Kmerger>(kroot + 1);
+            Li = new ArrayList<Kmerger>(kroot);
             List<CircularBuffer<Comparable>> buffers =
                     new ArrayList<CircularBuffer<Comparable>>();
             for (int ii = 1; ii < kroot; ii++) {
@@ -254,6 +255,8 @@ public class LazyFunnelsort {
         public void merge() {
             // Do not loop, just make one attempt to populate the output.
             if (!output.isFull()) {
+                // Even with the buffer empty notification, need to at least
+                // populate the buffers once to prime them for merging.
                 for (Kmerger merger : Li) {
                     merger.merge();
                 }
@@ -297,8 +300,8 @@ public class LazyFunnelsort {
         @Override
         @SuppressWarnings("unchecked")
         public void merge() {
-            // We assume the caller has populated our buffers. An exception
-            // will be thrown if that is not the case in the following sorter.
+            // We assume the buffers have been populated. An exception will
+            // be thrown if that is not the case.
 
             // Perform an insertion sort of the buffers using the leading values.
             for (int i = 1; i < buffers.size(); i++) {

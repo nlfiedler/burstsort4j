@@ -38,7 +38,8 @@ public class LazyFunnelsortTest {
     @Test
     public void test_InsertionMerge_Dictwords() {
         try {
-            List<String> data = Tests.loadData();
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
             Collections.shuffle(data);
             test_InsertionMerge(data);
         } catch (IOException ioe) {
@@ -147,7 +148,8 @@ public class LazyFunnelsortTest {
     @Test
     public void test_Mergers_Dictwords() {
         try {
-            List<String> data = Tests.loadData();
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
             Collections.shuffle(data);
             test_Mergers(data);
         } catch (IOException ioe) {
@@ -295,7 +297,9 @@ public class LazyFunnelsortTest {
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
+            Collections.shuffle(data);
             data = data.subList(0, 1024);
+            Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
             LazyFunnelsort.sort(arr);
@@ -319,7 +323,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testDictWords() {
         try {
             // Use the large dictionary rather than the trivial one.
@@ -346,13 +350,14 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testReversed() {
         try {
             List<String> data = Tests.loadData();
             Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
+// TODO: debug this one, it always fails at the same place (Catherwood > Aladdin @ 801)
             LazyFunnelsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
@@ -371,7 +376,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isRepeated(arr, STR));
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
         String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
@@ -388,7 +393,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testRandom() {
         List<String> data = Tests.generateData(1000000, 100);
         String[] arr = data.toArray(new String[data.size()]);
@@ -396,7 +401,7 @@ public class LazyFunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testHamlet() {
         try {
             List<String> data = Tests.loadData("hamletwords");
@@ -409,7 +414,7 @@ public class LazyFunnelsortTest {
         }
     }
 
-//    @Test // TODO: test not yet working
+    @Test
     public void testDictCalls() {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);
