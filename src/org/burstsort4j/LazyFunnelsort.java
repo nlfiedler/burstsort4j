@@ -227,24 +227,29 @@ public class LazyFunnelsort {
             this.output = output;
             output.addObserver(this);
             int k = inputs.size();
-// TODO: consider doubling k3half (2*k^(3/2) is the original algorithm value)
-            int k3half = Math.round((float) Math.sqrt((double) k * k * k));
-            // Rounding up avoids creating excessive numbers of mergers.
-            int kroot = Math.round((float) Math.sqrt((double) k));
+            int k3half2 = Math.round((float) Math.sqrt((double) k * k * k)) * 2;
+            double k2 = Math.sqrt((double) k);
+            // The kroot is used to determine the number of mergers to
+            // create, which we want to be reasonable, so we round.
+            int kroot = Math.round((float) k2);
+            // The kspread value is how many inputs are sent to each
+            // merger, which we want to have an even distribution, and
+            // so the ceiling of this value is taken.
+            int kspread = (int) Math.ceil(k2);
             int offset = 0;
             Li = new ArrayList<Kmerger>(kroot);
             List<CircularBuffer<Comparable>> buffers =
                     new ArrayList<CircularBuffer<Comparable>>();
             for (int ii = 1; ii < kroot; ii++) {
-                List<CircularBuffer<Comparable>> li = inputs.subList(offset, offset + kroot);
-                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+                List<CircularBuffer<Comparable>> li = inputs.subList(offset, offset + kspread);
+                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half2);
                 buffers.add(buffer);
                 Li.add(MergerFactory.createMerger(li, buffer));
-                offset += kroot;
+                offset += kspread;
             }
             if (inputs.size() > offset) {
                 List<CircularBuffer<Comparable>> li = inputs.subList(offset, inputs.size());
-                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half);
+                CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half2);
                 buffers.add(buffer);
                 Li.add(MergerFactory.createMerger(li, buffer));
             }
