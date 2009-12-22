@@ -16,7 +16,6 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
 import java.io.BufferedReader;
@@ -36,13 +35,16 @@ import java.util.Random;
  * @author Nathan Fiedler
  */
 public class Benchmark {
+
     /** Number of times each sort implementation is run for each data set. */
     private static final int RUN_COUNT = 5;
+
     /** Size of the data sets used in testing sort performance. */
     private static enum DataSize {
-        SMALL   (333000),
-        MEDIUM (1000000),
-        LARGE  (3000000);
+
+        SMALL(333000),
+        MEDIUM(1000000),
+        LARGE(3000000);
         /** The quantity for this data size. */
         private final int value;
 
@@ -83,14 +85,14 @@ public class Benchmark {
         if (args.length == 0) {
             // With no arguments, run the random data generators and all
             // of the data sizes.
-            generators = new DataGenerator[] {
+            generators = new DataGenerator[]{
                         new RandomGenerator(),
                         new PsuedoWordGenerator(),
                         new RepeatGenerator(),
                         new SmallAlphabetGenerator(),
                         new RepeatCycleGenerator(),
                         new GenomeGenerator()
-            };
+                    };
             if (Runtime.getRuntime().availableProcessors() > 1) {
                 // If there is more than one CPU core then automatically
                 // add in the parallel sort runners for comparison.
@@ -101,7 +103,8 @@ public class Benchmark {
                             new BurstsortRunner(),
                             new BurstsortThreadPoolRunner(),
                             new RedesignedBurstsortRunner(),
-                            new RedesignedBurstsortThreadPoolRunner()
+                            new RedesignedBurstsortThreadPoolRunner(),
+                            new LazyFunnelsortRunner()
                         };
             } else {
                 // If only one CPU core, then don't bother with parallel tests.
@@ -110,7 +113,8 @@ public class Benchmark {
                             new QuicksortRunner(),
                             new MultikeyRunner(),
                             new BurstsortRunner(),
-                            new RedesignedBurstsortRunner()
+                            new RedesignedBurstsortRunner(),
+                            new LazyFunnelsortRunner()
                         };
             }
             sizes = DataSize.values();
@@ -141,6 +145,19 @@ public class Benchmark {
                                 new RedesignedBurstsortRunner()
                             };
                 }
+            } else if (args[0].equals("--funnelsort")) {
+                generators = new DataGenerator[]{
+                            new RandomGenerator(),
+                            new PsuedoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                        };
+                sizes = DataSize.values();
+                runners = new SortRunner[]{
+                            new LazyFunnelsortRunner()
+                        };
             } else {
                 usage();
                 System.exit(1);
@@ -203,6 +220,7 @@ public class Benchmark {
         System.out.println("Usage: Benchmark [<options>]|[--1|--2|--3 <file>]");
         System.out.println("\t--burstsort: run only the burstsort tests, with the multi-threaded");
         System.out.println("\t             versions if multiple CPU cores are present.");
+        System.out.println("\t--funnelsort: run only the funnelsort tests");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
         System.out.println("\t--3: load 3m lines from file and benchmark.");
@@ -291,6 +309,7 @@ public class Benchmark {
      * Checked exception for the data generators.
      */
     private static class GeneratorException extends Exception {
+
         /** silence compiler warnings */
         private static final long serialVersionUID = 1L;
 
@@ -341,6 +360,7 @@ public class Benchmark {
      * The file must have sufficient data or an error occurs.
      */
     private static class FileGenerator implements DataGenerator {
+
         /** File from whence data is to be read. */
         private File file;
 
@@ -388,6 +408,7 @@ public class Benchmark {
      * characters from the genome alphabet.
      */
     private static class GenomeGenerator implements DataGenerator {
+
         /** Size of the randomly generated strings. */
         private static final int LENGTH = 9;
         /** Size of the genome alphabet (a, c, g, t). */
@@ -434,6 +455,7 @@ public class Benchmark {
      * the lower-case letters.
      */
     private static class PsuedoWordGenerator implements DataGenerator {
+
         /** Longest (real) word in English: antidisestablishmentarianism */
         private static final int LONGEST = 28;
         /** Letters in the English alphabet (lower case only) */
@@ -468,6 +490,7 @@ public class Benchmark {
      * characters from the printable ASCII set (from 32 to 126).
      */
     private static class RandomGenerator implements DataGenerator {
+
         /** Size of the randomly generated strings. */
         private static final int LENGTH = 100;
         /** All printable characters in US-ASCII. */
@@ -507,8 +530,8 @@ public class Benchmark {
         public List<String> generate(DataSize size) throws GeneratorException {
             int count = size.getValue();
             List<String> list = Collections.nCopies(count,
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
             return list;
         }
 
@@ -528,8 +551,8 @@ public class Benchmark {
         @Override
         public List<String> generate(DataSize size) throws GeneratorException {
             String[] strs = new String[100];
-            String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+            String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
             for (int i = 0, l = 1; i < strs.length; i++, l++) {
                 strs[i] = seed.substring(0, l);
             }
@@ -552,6 +575,7 @@ public class Benchmark {
      * pathological cases to stress test the sort.
      */
     private static class SmallAlphabetGenerator implements DataGenerator {
+
         /** Longest string to be created. */
         private static final int LONGEST = 100;
         /** Small alphabet size. */
@@ -670,6 +694,22 @@ public class Benchmark {
             } catch (InterruptedException ie) {
                 ie.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Runs the lazy funnelsort implementation.
+     */
+    private static class LazyFunnelsortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "LazyFunnelsort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            LazyFunnelsort.sort(data);
         }
     }
 
