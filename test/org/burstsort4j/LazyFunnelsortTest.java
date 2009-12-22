@@ -357,7 +357,6 @@ public class LazyFunnelsortTest {
             Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
-// TODO: debug this one, it always fails at the same place (Catherwood > Aladdin @ 801)
             LazyFunnelsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {

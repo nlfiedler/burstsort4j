@@ -132,14 +132,14 @@ public class LazyFunnelsort {
     private static void sort(Comparable[] strings, int offset, int count) {
         if (count > QUICKSORT_THRESHOLD) {
             // Divide input into n^(1/3) arrays of size n^(2/3).
-            int num_blocks = Math.round((float) Math.cbrt((double) count));
-            int block_size = count / num_blocks;
+            final int num_blocks = Math.round((float) Math.cbrt((double) count));
+            final int block_size = count / num_blocks;
             int mark = offset;
             for (int ii = 1; ii < num_blocks; ii++) {
                 sort(strings, mark, block_size);
                 mark += block_size;
             }
-            int leftover = count - mark;
+            int leftover = count - (mark - offset);
             if (leftover > 0) {
                 sort(strings, mark, leftover);
             }
@@ -152,7 +152,7 @@ public class LazyFunnelsort {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, block_size, false));
                 mark += block_size;
             }
-            leftover = count - mark;
+            leftover = count - (mark - offset);
             if (leftover > 0) {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, leftover, false));
             }
@@ -233,8 +233,8 @@ public class LazyFunnelsort {
             // create, which we want to be reasonable, so we round.
             int kroot = Math.round((float) k2);
             // The kspread value is how many inputs are sent to each
-            // merger, which we want to have an even distribution, and
-            // so the ceiling of this value is taken.
+            // merger, of which we want to have an even distribution,
+            // and so the ceiling of this value is taken.
             int kspread = (int) Math.ceil(k2);
             int offset = 0;
             Li = new ArrayList<Kmerger>(kroot);
