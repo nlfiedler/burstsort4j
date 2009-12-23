@@ -34,6 +34,9 @@ import java.util.List;
  */
 public class Funnelsort {
 
+    /** Size of inputs for which insertion sort should be used. */
+    private static final int INSERTSORT_THRESHOLD = 21;
+
     /**
      * Sorts the set of strings using the "lazy" funnelsort algorithm as
      * described by Brodal, Fagerberg, and Vinther.
@@ -57,20 +60,16 @@ public class Funnelsort {
      */
     @SuppressWarnings("unchecked")
     private static void sort(Comparable[] strings, int offset, int count) {
-        // For arrays of trivial length, delegate to insertion sort.
-        if (count < 21) {
-            Insertionsort.sort(strings, offset, offset + count - 1);
-        } else {
-
+        if (count > INSERTSORT_THRESHOLD) {
             // Divide input into n^(1/3) arrays of size n^(2/3).
-            int num_blocks = Math.round((float) Math.cbrt((double) count));
-            int block_size = count / num_blocks;
+            final int num_blocks = Math.round((float) Math.cbrt((double) count));
+            final int block_size = count / num_blocks;
             int mark = offset;
             for (int ii = 1; ii < num_blocks; ii++) {
                 sort(strings, mark, block_size);
                 mark += block_size;
             }
-            int leftover = count - mark;
+            int leftover = count - (mark - offset);
             if (leftover > 0) {
                 sort(strings, mark, leftover);
             }
@@ -83,7 +82,7 @@ public class Funnelsort {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, block_size, false));
                 mark += block_size;
             }
-            leftover = count - mark;
+            leftover = count - (mark - offset);
             if (leftover > 0) {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, leftover, false));
             }
@@ -91,6 +90,9 @@ public class Funnelsort {
             Kmerger merger = MergerFactory.createMerger(inputs, output);
             merger.merge();
             output.drain(strings, offset);
+        } else {
+            // For small subarrays, delegate to insertion sort.
+            Insertionsort.sort(strings, offset, offset + count - 1);
         }
     }
 
@@ -111,14 +113,6 @@ public class Funnelsort {
          * Merges k^3 elements from the inputs and writes them to the output.
          */
         void merge();
-
-        /**
-         * Set the k value for the merger to dictate how many elements are
-         * to be output during each merge operation.
-         *
-         * @param  k  the k value for the merger.
-         */
-        void setK(int k);
     }
 
     /**
@@ -193,8 +187,7 @@ public class Funnelsort {
      * groups, and ultimately merging their output into a single buffer.
      */
     private static class BufferMerger implements Kmerger {
-        /** The size of this k-merger. */
-        private int k;
+
         /** The number of times to invoke the R merger to merge inputs. */
         private int k3half;
         /** The right k-merger for merging the k^(1/2) input streams. */
@@ -210,9 +203,10 @@ public class Funnelsort {
          */
         public BufferMerger(List<CircularBuffer<Comparable>> inputs,
                 CircularBuffer<Comparable> output) {
-            setK(inputs.size());
+            int k = inputs.size();
             // Rounding up avoids creating excessive numbers of mergers.
             int kroot = Math.round((float) Math.sqrt((double) k));
+            k3half = Math.round((float) Math.sqrt((double) k * k * k));
             int twok3half = 2 * k3half;
             int offset = 0;
             Li = new ArrayList<Kmerger>(kroot + 1);
@@ -228,8 +222,6 @@ public class Funnelsort {
                 Li.add(MergerFactory.createMerger(li, buffer));
             }
             R = MergerFactory.createMerger(output, Li);
-            // Tell the R merger how many elements it should output.
-            R.setK(kroot + 1);
         }
 
         @Override
@@ -251,12 +243,6 @@ public class Funnelsort {
                 R.merge();
             }
         }
-
-        @Override
-        public void setK(int k) {
-            this.k = k;
-            k3half = Math.round((float) Math.sqrt((double) k * k * k));
-        }
     }
 
     /**
@@ -265,8 +251,7 @@ public class Funnelsort {
      * groups, and ultimately merging their output into a single buffer.
      */
     private static class MergerMerger implements Kmerger {
-        /** The size of this k-merger. */
-        private int k;
+
         /** The number of times to invoke the R merger to merge inputs. */
         private int k3half;
         /** The right k-merger for merging the k^(1/2) input streams. */
@@ -281,9 +266,10 @@ public class Funnelsort {
          * @param  mergers  streams of sorted input to be merged.
          */
         public MergerMerger(CircularBuffer<Comparable> output, List<Kmerger> mergers) {
-            setK(mergers.size());
+            int k = mergers.size();
             // Rounding up avoids creating excessive numbers of mergers.
             int kroot = Math.round((float) Math.sqrt((double) k));
+            k3half = Math.round((float) Math.sqrt((double) k * k * k));
             int twok3half = 2 * k3half;
             int offset = 0;
             Li = new ArrayList<Kmerger>(kroot + 1);
@@ -299,8 +285,6 @@ public class Funnelsort {
                 Li.add(MergerFactory.createMerger(buffer, li));
             }
             R = MergerFactory.createMerger(output, Li);
-            // Tell the R merger how many elements it should output.
-            R.setK(kroot + 1);
         }
 
         @Override
@@ -322,12 +306,6 @@ public class Funnelsort {
                 R.merge();
             }
         }
-
-        @Override
-        public void setK(int k) {
-            this.k = k;
-            k3half = Math.round((float) Math.sqrt((double) k * k * k));
-        }
     }
 
     /**
@@ -335,6 +313,7 @@ public class Funnelsort {
      * buffers, or a mix of both.
      */
     private static class BinaryMerger implements Kmerger {
+
         /** The "left" k-merger for populating the input buffer, or null if none. */
         private Kmerger leftMerger;
         /** The "left" input buffer, possibly associated with the left merger,
@@ -365,7 +344,8 @@ public class Funnelsort {
         public BinaryMerger(Kmerger leftMerger, CircularBuffer<Comparable> leftBuffer,
                 Kmerger rightMerger, CircularBuffer<Comparable> rightBuffer,
                 CircularBuffer<Comparable> output) {
-            setK(2);
+            kpow3 = 8;
+            k3half = 8;
             this.leftMerger = leftMerger;
             if (leftMerger != null) {
                 this.leftBuffer = leftMerger.getOutput();
@@ -421,13 +401,6 @@ public class Funnelsort {
             if (n > 0) {
                 rightBuffer.move(output, n);
             }
-        }
-
-        @Override
-        public void setK(int k) {
-            kpow3 = k * k * k;
-            // Binary merger differs in what it expects of its inputs.
-            k3half = kpow3;
         }
     }
 }

@@ -74,8 +74,7 @@ public class FunnelsortTest {
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
-// XXX: sheer dumb luck that this passes. Change the 100 to 173 and it fails.
-            data = data.subList(0, 100);
+            data = data.subList(0, 1024);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
             Funnelsort.sort(arr);
@@ -90,8 +89,7 @@ public class FunnelsortTest {
         try {
             List<String> data = Tests.loadData();
             Collections.shuffle(data);
-// XXX: sheer dumb luck that this passes. Change the 100 to 173 and it fails.
-            data = data.subList(0, 100);
+            data = data.subList(0, 1024);
             String[] arr = data.toArray(new String[data.size()]);
             Funnelsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
@@ -100,7 +98,7 @@ public class FunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testDictWords() {
         try {
             // Use the large dictionary rather than the trivial one.
@@ -114,7 +112,7 @@ public class FunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testSorted() {
         try {
             List<String> data = Tests.loadData();
@@ -127,7 +125,7 @@ public class FunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -141,7 +139,7 @@ public class FunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
@@ -152,7 +150,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isRepeated(arr, STR));
     }
 
-//    @Test
+    @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
         String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
@@ -169,7 +167,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test
+    @Test
     public void testRandom() {
         List<String> data = Tests.generateData(1000000, 100);
         String[] arr = data.toArray(new String[data.size()]);
@@ -177,7 +175,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-//    @Test
+    @Test
     public void testHamlet() {
         try {
             List<String> data = Tests.loadData("hamletwords");
@@ -190,7 +188,7 @@ public class FunnelsortTest {
         }
     }
 
-//    @Test
+    @Test
     public void testDictCalls() {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);
