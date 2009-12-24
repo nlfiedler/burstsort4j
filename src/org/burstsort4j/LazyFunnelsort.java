@@ -26,7 +26,9 @@ import java.util.Observer;
 /**
  * An implementation of the lazy funnelsort algorithm as described by Brodal,
  * Fagerberg, and Vinther, which itself is adapted from the original
- * algorithm by Frigo, Leiserson, Prokop, and Ramachandran.
+ * algorithm by Frigo, Leiserson, Prokop, and Ramachandran. This is not a
+ * String-based sort like some of the others in this package, but rather
+ * sorts instances of {@code Comparable}, much like mergesort and quicksort.
  *
  * @author Nathan Fiedler
  */
@@ -36,6 +38,9 @@ public class LazyFunnelsort {
      * delegating to quicksort for arrays of size 400 or less improved
      * overall performance of funnelsort. */
     private static final int QUICKSORT_THRESHOLD = 400;
+    //
+    // Tried threshold of 200 and 800 and no noticeable difference.
+    //
 
     /**
      * Merges the given list of buffers into a single buffer using an
@@ -131,7 +136,7 @@ public class LazyFunnelsort {
     @SuppressWarnings("unchecked")
     private static void sort(Comparable[] strings, int offset, int count) {
         if (count > QUICKSORT_THRESHOLD) {
-            // Divide input into n^(1/3) arrays of size n^(2/3).
+            // Divide input into n^(1/3) arrays of size n^(2/3) and sort each.
             final int num_blocks = Math.round((float) Math.cbrt((double) count));
             final int block_size = count / num_blocks;
             int mark = offset;
@@ -146,7 +151,7 @@ public class LazyFunnelsort {
 
             // Merge the n^(1/3) sorted arrays using a k-merger.
             List<CircularBuffer<Comparable>> inputs =
-                    new ArrayList<CircularBuffer<Comparable>>(num_blocks + 1);
+                    new ArrayList<CircularBuffer<Comparable>>(num_blocks);
             mark = offset;
             for (int ii = 1; ii < num_blocks; ii++) {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, block_size, false));
@@ -160,6 +165,12 @@ public class LazyFunnelsort {
             Kmerger merger = MergerFactory.createMerger(inputs, output);
             merger.merge();
             output.drain(strings, offset);
+            //
+            // The above code is re-using the input buffer and creating a
+            // new destination buffer. Tried copying the input buffers and
+            // re-using the destination buffer but that made the performance
+            // slightly slower.
+            //
         } else {
             // For small subarrays, delegate to quicksort.
             Quicksort.sort(strings, offset, offset + count - 1);
@@ -194,6 +205,7 @@ public class LazyFunnelsort {
                 List<CircularBuffer<Comparable>> inputs,
                 CircularBuffer<Comparable> output) {
             int k = inputs.size();
+            // Tests indicate the values of 8 and 16 do not help performance.
             if (k > 4) {
                 return new BufferMerger(inputs, output);
             } else {
@@ -284,7 +296,9 @@ public class LazyFunnelsort {
     private static class InsertionMerger implements Kmerger, Observer {
 
         /** List of input buffers. */
-        private List<CircularBuffer<Comparable>> buffers;
+        private CircularBuffer[] buffers;
+        /** Number of active buffers in the {@code buffers} array. */
+        private int bufferCount;
         /** The output buffer. */
         private CircularBuffer<Comparable> output;
 
@@ -296,8 +310,9 @@ public class LazyFunnelsort {
          */
         public InsertionMerger(List<CircularBuffer<Comparable>> buffers,
                 CircularBuffer<Comparable> output) {
-            // Copy the input list so it can be modified during merging.
-            this.buffers = new ArrayList<CircularBuffer<Comparable>>(buffers);
+            // Convert the list to an array for fast access and compaction.
+            bufferCount = buffers.size();
+            this.buffers = buffers.toArray(new CircularBuffer[bufferCount]);
             this.output = output;
             output.addObserver(this);
         }
@@ -309,32 +324,32 @@ public class LazyFunnelsort {
             // be thrown if that is not the case.
 
             // Perform an insertion sort of the buffers using the leading values.
-            for (int i = 1; i < buffers.size(); i++) {
-                CircularBuffer<Comparable> tmp = buffers.get(i);
+            for (int i = 1; i < bufferCount; i++) {
+                CircularBuffer<Comparable> tmp = buffers[i];
                 int j = i;
-                while (j > 0 && tmp.peek().compareTo(buffers.get(j - 1).peek()) < 0) {
-                    buffers.set(j, buffers.get(j - 1));
+                while (j > 0 && tmp.peek().compareTo(buffers[j - 1].peek()) < 0) {
+                    buffers[j] = buffers[j - 1];
                     j--;
                 }
-                buffers.set(j, tmp);
+                buffers[j] = tmp;
             }
 
             // While output is not full...
-            while (!output.isFull() && !buffers.isEmpty()) {
-                if (buffers.size() == 1) {
+            while (!output.isFull() && bufferCount > 0) {
+                if (bufferCount == 1) {
                     // Copy remainder of last stream to output.
-                    CircularBuffer<Comparable> t = buffers.get(0);
+                    CircularBuffer<Comparable> t = buffers[0];
                     int n = Math.min(t.size(), output.remaining());
                     if (n > 0) {
                         t.move(output, n);
                         if (t.isEmpty()) {
-                            buffers.remove(0);
+                            System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                         }
                     }
-                } else if (buffers.size() == 2) {
+                } else if (bufferCount == 2) {
                     // With only two streams, perform a faster merge.
-                    CircularBuffer<Comparable> a = buffers.get(0);
-                    CircularBuffer<Comparable> b = buffers.get(1);
+                    CircularBuffer<Comparable> a = buffers[0];
+                    CircularBuffer<Comparable> b = buffers[1];
                     while (!output.isFull() && !a.isEmpty() && !b.isEmpty()) {
                         if (a.peek().compareTo(b.peek()) < 0) {
                             output.add(a.remove());
@@ -343,27 +358,28 @@ public class LazyFunnelsort {
                         }
                     }
                     if (b.isEmpty()) {
-                        buffers.remove(1);
+                        buffers[1] = buffers[0];
+                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                     }
                     if (a.isEmpty()) {
-                        buffers.remove(0);
+                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                     }
                 } else {
-                    CircularBuffer<Comparable> t = buffers.get(0);
+                    CircularBuffer<Comparable> t = buffers[0];
                     output.add(t.remove());
                     if (t.isEmpty()) {
                         // This stream has been exhausted.
-                        buffers.remove(0);
+                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                     } else {
                         // Insert new candidate into correct position in d.
                         Comparable s = t.peek();
                         int j = 1;
-                        int length = buffers.size();
-                        while (j < length && s.compareTo(buffers.get(j).peek()) > 0) {
-                            buffers.set(j - 1, buffers.get(j));
+                        int length = bufferCount;
+                        while (j < length && s.compareTo(buffers[j].peek()) > 0) {
+                            buffers[j - 1] = buffers[j];
                             j++;
                         }
-                        buffers.set(j - 1, t);
+                        buffers[j - 1] = t;
                     }
                 }
             }
