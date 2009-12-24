@@ -47,6 +47,8 @@ public class CircularBuffer<E> implements Collection, Queue {
     private final int lower;
     /** Upper limit within the buffer, just past the last usable position. */
     private final int upper;
+    /** The element capacity of the buffer. */
+    private final int capacity;
     /** Offset of the first entry in the buffer. */
     private int start;
     /** Offset of the last entry in the buffer. */
@@ -65,6 +67,7 @@ public class CircularBuffer<E> implements Collection, Queue {
         buffer = new Object[capacity];
         lower = 0;
         upper = capacity;
+        this.capacity = capacity;
     }
 
     /**
@@ -115,13 +118,14 @@ public class CircularBuffer<E> implements Collection, Queue {
         this.count = count;
         lower = offset;
         upper = offset + count;
+        capacity = count;
         start = lower;
         end = lower;
     }
 
     @Override
     public boolean add(Object o) {
-        if (count == upper - lower) {
+        if (count == capacity) {
             throw new IllegalStateException("buffer is full");
         }
         count++;
@@ -164,7 +168,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      * @return  buffer capacity.
      */
     public int capacity() {
-        return upper - lower;
+        return capacity;
     }
 
     @Override
@@ -250,7 +254,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      * @return  true if full, false otherwise.
      */
     public boolean isFull() {
-        return count == (upper - lower);
+        return count == capacity;
     }
 
     @Override
@@ -260,7 +264,7 @@ public class CircularBuffer<E> implements Collection, Queue {
 
     @Override
     public boolean offer(Object o) {
-        if (count == upper - lower) {
+        if (count == capacity) {
             return false;
         }
         count++;
@@ -302,7 +306,7 @@ public class CircularBuffer<E> implements Collection, Queue {
             }
             start += copied;
             if (start >= upper) {
-                start -= (upper - lower);
+                start -= capacity;
             }
             tocopy -= copied;
         }
@@ -372,7 +376,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      * @return  number of empty spaces in buffer.
      */
     public int remaining() {
-        return upper - lower - count;
+        return capacity - count;
     }
 
     @Override
