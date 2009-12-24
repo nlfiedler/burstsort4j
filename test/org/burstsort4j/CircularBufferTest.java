@@ -18,6 +18,7 @@
  */
 package org.burstsort4j;
 
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Observable;
 import java.util.Observer;
@@ -402,6 +403,7 @@ public class CircularBufferTest {
         } catch (NoSuchElementException nsee) {
             // expected
         }
+        assertNull(instance.peek());
         instance.add("abc");
         assertEquals("abc", instance.element());
         assertEquals("abc", instance.peek());
@@ -413,6 +415,37 @@ public class CircularBufferTest {
         instance.remove();
         assertEquals("123", instance.element());
         assertEquals("123", instance.peek());
+        instance.remove();
+        try {
+            assertEquals("123", instance.element());
+            fail("element() of empty buffer should fail");
+        } catch (NoSuchElementException nsee) {
+            // expected
+        }
+        assertNull(instance.peek());
+    }
+
+    @Test
+    public void testPeekCopied() {
+        // Test with existing, copied buffer.
+        Integer[] data = new Integer[20];
+        for (int i = 1; i <= data.length; i++) {
+            data[i - 1] = new Integer(i);
+        }
+        CircularBuffer<Integer> instance = new CircularBuffer<Integer>(data, true);
+        assertEquals(new Integer(1), instance.peek());
+        while (!instance.isEmpty()) {
+            instance.remove();
+        }
+        assertNull(instance.peek());
+        // Use an array copied from a portion of another.
+        instance = new CircularBuffer<Integer>(data, 3, 5, true);
+        Arrays.fill(data, null);
+        assertEquals(new Integer(4), instance.peek());
+        while (!instance.isEmpty()) {
+            instance.remove();
+        }
+        assertNull(instance.peek());
     }
 
     @Test
@@ -486,6 +519,7 @@ public class CircularBufferTest {
      * Used for testing the Observer support in CircularBuffer.
      */
     private static class BufferObserver implements Observer {
+
         private int count;
 
         /**

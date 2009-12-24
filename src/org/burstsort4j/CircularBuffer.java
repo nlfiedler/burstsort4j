@@ -108,6 +108,7 @@ public class CircularBuffer<E> implements Collection, Queue {
         if (copy) {
             buffer = new Object[count];
             System.arraycopy(initial, offset, buffer, 0, count);
+            offset = 0;
         } else {
             buffer = initial;
         }
@@ -410,6 +411,7 @@ public class CircularBuffer<E> implements Collection, Queue {
      * CircularBuffer associated with this instance.
      */
     private static class BufferObservable extends Observable {
+
         /** The buffer whose state changes from time to time. */
         private CircularBuffer buffer;
 
