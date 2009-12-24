@@ -158,6 +158,24 @@ public class Benchmark {
                 runners = new SortRunner[]{
                             new LazyFunnelsortRunner()
                         };
+            } else if (args[0].equals("--comparable")) {
+                // Benchmark the Comparable-based sorters (i.e. those that
+                // sort instances of Comparable, withouth any assumptions
+                // about the input, such as String-based sorters).
+                generators = new DataGenerator[]{
+                            new RandomGenerator(),
+                            new PsuedoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                        };
+                sizes = DataSize.values();
+                runners = new SortRunner[]{
+                            new MergesortRunner(),
+                            new QuicksortRunner(),
+                            new LazyFunnelsortRunner()
+                        };
             } else {
                 usage();
                 System.exit(1);
@@ -221,6 +239,7 @@ public class Benchmark {
         System.out.println("\t--burstsort: run only the burstsort tests, with the multi-threaded");
         System.out.println("\t             versions if multiple CPU cores are present.");
         System.out.println("\t--funnelsort: run only the funnelsort tests");
+        System.out.println("\t--comparable: run the tests for Comparable sorters");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
         System.out.println("\t--3: load 3m lines from file and benchmark.");
@@ -280,10 +299,10 @@ public class Benchmark {
                             }
                         }
                     }
-                    // Find the average of the run times, dropping the
-                    // high and low values. The run times should never
-                    // be more than a couple of minutes, so these
-                    // calculations will never overflow.
+
+                    // Find the average of the run times. The run times
+                    // should never be more than a couple of minutes,
+                    // so these calculations will never overflow.
                     long total = 0;
                     long highest = Long.MIN_VALUE;
                     long lowest = Long.MAX_VALUE;
@@ -296,10 +315,8 @@ public class Benchmark {
                             lowest = times[run];
                         }
                     }
-                    total -= lowest;
-                    total -= highest;
-                    long average = total / (RUN_COUNT - 2);
-                    System.out.format("%d ms\n", average);
+                    long average = total / RUN_COUNT;
+                    System.out.format("%4d %4d %4d (low/avg/high) ms\n", lowest, average, highest);
                 }
             }
         }
