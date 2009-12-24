@@ -246,7 +246,7 @@ public class LazyFunnelsortTest {
         }
         CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(arr.length);
         // Test the merger.
-        Kmerger merger = MergerFactory.createMerger(inputs, output);
+        Kmerger merger = MergerFactory.createMerger(inputs, 0, inputs.size(), output);
         merger.merge();
         String[] results = new String[arr.length];
         output.drain(results, 0);

@@ -20,6 +20,7 @@ package org.burstsort4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -162,7 +163,7 @@ public class LazyFunnelsort {
                 inputs.add(new CircularBuffer<Comparable>(strings, mark, leftover, false));
             }
             CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(count);
-            Kmerger merger = MergerFactory.createMerger(inputs, output);
+            Kmerger merger = MergerFactory.createMerger(inputs, 0, inputs.size(), output);
             merger.merge();
             output.drain(strings, offset);
             //
@@ -198,18 +199,30 @@ public class LazyFunnelsort {
          * Creates a new instance of Kmerger to merge the input buffers.
          *
          * @param  inputs  streams of sorted input to be merged.
+         * @param  offset  first element in list to be merged.
+         * @param  count   number of elements in list to be merged, starting
+         *                 from the {@code offset} position.
          * @param  output  buffer to which merged results are written.
          * @return  a Kmerger instance.
          */
+        @SuppressWarnings("unchecked")
         public static Kmerger createMerger(
-                List<CircularBuffer<Comparable>> inputs,
-                CircularBuffer<Comparable> output) {
-            int k = inputs.size();
+                List<CircularBuffer<Comparable>> inputs, int offset,
+                int count, CircularBuffer<Comparable> output) {
+            int k = count;
             // Tests indicate the values of 8 and 16 do not help performance.
             if (k > 4) {
-                return new BufferMerger(inputs, output);
+                return new BufferMerger(inputs, offset, count, output);
             } else {
-                return new InsertionMerger(inputs, output);
+                // Convert the sublist to an array for insertion merger.
+                CircularBuffer[] buffers = new CircularBuffer[count];
+                ListIterator<CircularBuffer<Comparable>> li =
+                        inputs.listIterator(offset);
+                int c = 0;
+                while (c < count) {
+                    buffers[c++] = li.next();
+                }
+                return new InsertionMerger(buffers, output);
             }
         }
     }
@@ -232,13 +245,16 @@ public class LazyFunnelsort {
          * Creates a new instance of BufferMerger.
          *
          * @param  inputs  streams of sorted input to be merged.
+         * @param  offset  first element in list to be merged.
+         * @param  count   number of elements in list to be merged, starting
+         *                 from the {@code offset} position.
          * @param  output  buffer to which merged results are written.
          */
         public BufferMerger(List<CircularBuffer<Comparable>> inputs,
-                CircularBuffer<Comparable> output) {
+                int offset, int count, CircularBuffer<Comparable> output) {
             this.output = output;
             output.addObserver(this);
-            int k = inputs.size();
+            int k = count;
             int k3half2 = Math.round((float) Math.sqrt((double) k * k * k)) * 2;
             double k2 = Math.sqrt((double) k);
             // The kroot is used to determine the number of mergers to
@@ -248,24 +264,26 @@ public class LazyFunnelsort {
             // merger, of which we want to have an even distribution,
             // and so the ceiling of this value is taken.
             int kspread = (int) Math.ceil(k2);
-            int offset = 0;
             Li = new ArrayList<Kmerger>(kroot);
+            // Set up the list of buffers for the right side merger.
             List<CircularBuffer<Comparable>> buffers =
                     new ArrayList<CircularBuffer<Comparable>>();
+            // Create mergers for the left inputs by dividing up the
+            // inputs into roughly equal-sized sublists.
+            int mark = offset;
             for (int ii = 1; ii < kroot; ii++) {
-                List<CircularBuffer<Comparable>> li = inputs.subList(offset, offset + kspread);
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half2);
                 buffers.add(buffer);
-                Li.add(MergerFactory.createMerger(li, buffer));
-                offset += kspread;
+                Li.add(MergerFactory.createMerger(inputs, mark, kspread, buffer));
+                mark += kspread;
             }
-            if (inputs.size() > offset) {
-                List<CircularBuffer<Comparable>> li = inputs.subList(offset, inputs.size());
+            int leftover = count - (mark - offset);
+            if (leftover > 0) {
                 CircularBuffer<Comparable> buffer = new CircularBuffer<Comparable>(k3half2);
                 buffers.add(buffer);
-                Li.add(MergerFactory.createMerger(li, buffer));
+                Li.add(MergerFactory.createMerger(inputs, mark, leftover, buffer));
             }
-            R = MergerFactory.createMerger(buffers, output);
+            R = MergerFactory.createMerger(buffers, 0, buffers.size(), output);
         }
 
         @Override
@@ -308,11 +326,11 @@ public class LazyFunnelsort {
          * @param  buffers  the list of input buffers.
          * @param  output   the output buffer.
          */
-        public InsertionMerger(List<CircularBuffer<Comparable>> buffers,
+        public InsertionMerger(CircularBuffer[] buffers,
                 CircularBuffer<Comparable> output) {
             // Convert the list to an array for fast access and compaction.
-            bufferCount = buffers.size();
-            this.buffers = buffers.toArray(new CircularBuffer[bufferCount]);
+            bufferCount = buffers.length;
+            this.buffers = buffers;
             this.output = output;
             output.addObserver(this);
         }
@@ -334,7 +352,7 @@ public class LazyFunnelsort {
                 buffers[j] = tmp;
             }
 
-            // While output is not full...
+            // While output is not full and we have buffers to merge...
             while (!output.isFull() && bufferCount > 0) {
                 if (bufferCount == 1) {
                     // Copy remainder of last stream to output.
@@ -350,12 +368,14 @@ public class LazyFunnelsort {
                     // With only two streams, perform a faster merge.
                     CircularBuffer<Comparable> a = buffers[0];
                     CircularBuffer<Comparable> b = buffers[1];
-                    while (!output.isFull() && !a.isEmpty() && !b.isEmpty()) {
+                    int count = output.remaining();
+                    while (count > 0 && !a.isEmpty() && !b.isEmpty()) {
                         if (a.peek().compareTo(b.peek()) < 0) {
                             output.add(a.remove());
                         } else {
                             output.add(b.remove());
                         }
+                        count--;
                     }
                     if (b.isEmpty()) {
                         buffers[1] = buffers[0];
@@ -365,17 +385,17 @@ public class LazyFunnelsort {
                         System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                     }
                 } else {
+                    // Add the first comparable to the output.
                     CircularBuffer<Comparable> t = buffers[0];
                     output.add(t.remove());
                     if (t.isEmpty()) {
                         // This stream has been exhausted.
                         System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
                     } else {
-                        // Insert new candidate into correct position in d.
+                        // Insert new candidate into correct position in array.
                         Comparable s = t.peek();
                         int j = 1;
-                        int length = bufferCount;
-                        while (j < length && s.compareTo(buffers[j].peek()) > 0) {
+                        while (j < bufferCount && s.compareTo(buffers[j].peek()) > 0) {
                             buffers[j - 1] = buffers[j];
                             j++;
                         }
