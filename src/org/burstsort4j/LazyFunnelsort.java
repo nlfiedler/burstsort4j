@@ -361,7 +361,7 @@ public class LazyFunnelsort {
                     if (n > 0) {
                         t.move(output, n);
                         if (t.isEmpty()) {
-                            System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
+                            shift();
                         }
                     }
                 } else if (bufferCount == 2) {
@@ -379,10 +379,10 @@ public class LazyFunnelsort {
                     }
                     if (b.isEmpty()) {
                         buffers[1] = buffers[0];
-                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
+                        shift();
                     }
                     if (a.isEmpty()) {
-                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
+                        shift();
                     }
                 } else {
                     // Add the first comparable to the output.
@@ -390,7 +390,7 @@ public class LazyFunnelsort {
                     output.add(t.remove());
                     if (t.isEmpty()) {
                         // This stream has been exhausted.
-                        System.arraycopy(buffers, 1, buffers, 0, --bufferCount);
+                        shift();
                     } else {
                         // Insert new candidate into correct position in array.
                         Comparable s = t.peek();
@@ -403,6 +403,18 @@ public class LazyFunnelsort {
                     }
                 }
             }
+        }
+
+        /**
+         * Remove the first buffer from the buffers array by moving all of
+         * the other elements forward one position. Decrements the buffer
+         * count by one.
+         */
+        private void shift() {
+            for (int i = 1; i < bufferCount; i++) {
+                buffers[i - 1] = buffers[i];
+            }
+            bufferCount--;
         }
 
         @Override
