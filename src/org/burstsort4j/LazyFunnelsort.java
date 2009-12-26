@@ -44,58 +44,58 @@ public class LazyFunnelsort {
     //
 
     /**
-     * Sorts the set of strings using the "lazy" funnelsort algorithm as
-     * described by Brodal, Fagerberg, and Vinther.
+     * Sorts the set of Comparables using the "lazy" funnelsort algorithm
+     * as described by Brodal, Fagerberg, and Vinther.
      *
-     * @param  strings  array of strings to be sorted.
+     * @param  inputs  array of Comparables to be sorted.
      */
-    public static void sort(Comparable[] strings) {
-        if (strings == null || strings.length < 2) {
+    public static void sort(Comparable[] inputs) {
+        if (inputs == null || inputs.length < 2) {
             return;
         }
-        sort(strings, 0, strings.length);
+        sort(inputs, 0, inputs.length);
     }
 
     /**
      * Sorts the elements within the array starting at the offset and
      * ending at offset plus the count.
      *
-     * @param  strings  array containing elements to be sorted.
-     * @param  offset   first position within array to be sorted.
-     * @param  count    number of elements from offset to be sorted.
+     * @param  inputs  array containing elements to be sorted.
+     * @param  offset  first position within array to be sorted.
+     * @param  count   number of elements from offset to be sorted.
      */
     @SuppressWarnings("unchecked")
-    private static void sort(Comparable[] strings, int offset, int count) {
+    private static void sort(Comparable[] inputs, int offset, int count) {
         if (count > QUICKSORT_THRESHOLD) {
             // Divide input into n^(1/3) arrays of size n^(2/3) and sort each.
             final int num_blocks = Math.round((float) Math.cbrt((double) count));
             final int block_size = count / num_blocks;
             int mark = offset;
             for (int ii = 1; ii < num_blocks; ii++) {
-                sort(strings, mark, block_size);
+                sort(inputs, mark, block_size);
                 mark += block_size;
             }
             int leftover = count - (mark - offset);
             if (leftover > 0) {
-                sort(strings, mark, leftover);
+                sort(inputs, mark, leftover);
             }
 
             // Merge the n^(1/3) sorted arrays using a k-merger.
-            List<CircularBuffer<Comparable>> inputs =
+            List<CircularBuffer<Comparable>> buffers =
                     new ArrayList<CircularBuffer<Comparable>>(num_blocks);
             mark = offset;
             for (int ii = 1; ii < num_blocks; ii++) {
-                inputs.add(new CircularBuffer<Comparable>(strings, mark, block_size, false));
+                buffers.add(new CircularBuffer<Comparable>(inputs, mark, block_size, false));
                 mark += block_size;
             }
             leftover = count - (mark - offset);
             if (leftover > 0) {
-                inputs.add(new CircularBuffer<Comparable>(strings, mark, leftover, false));
+                buffers.add(new CircularBuffer<Comparable>(inputs, mark, leftover, false));
             }
             CircularBuffer<Comparable> output = new CircularBuffer<Comparable>(count);
-            Kmerger merger = MergerFactory.createMerger(inputs, 0, inputs.size(), output);
+            Kmerger merger = MergerFactory.createMerger(buffers, 0, buffers.size(), output);
             merger.merge();
-            output.drain(strings, offset);
+            output.drain(inputs, offset);
             //
             // The above code is re-using the input buffer and creating a
             // new destination buffer. Tried copying the input buffers and
@@ -104,7 +104,7 @@ public class LazyFunnelsort {
             //
         } else {
             // For small subarrays, delegate to quicksort.
-            Quicksort.sort(strings, offset, offset + count - 1);
+            Quicksort.sort(inputs, offset, offset + count - 1);
         }
     }
 
