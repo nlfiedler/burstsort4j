@@ -94,8 +94,6 @@ public class Benchmark {
                         new GenomeGenerator()
                     };
             if (Runtime.getRuntime().availableProcessors() > 1) {
-                // If there is more than one CPU core then automatically
-                // add in the parallel sort runners for comparison.
                 runners = new SortRunner[]{
                             new MergesortRunner(),
                             new QuicksortRunner(),
@@ -107,7 +105,6 @@ public class Benchmark {
                             new LazyFunnelsortRunner()
                         };
             } else {
-                // If only one CPU core, then don't bother with parallel tests.
                 runners = new SortRunner[]{
                             new MergesortRunner(),
                             new QuicksortRunner(),
@@ -130,8 +127,6 @@ public class Benchmark {
                         };
                 sizes = DataSize.values();
                 if (Runtime.getRuntime().availableProcessors() > 1) {
-                    // If there is more than one CPU core then automatically
-                    // add in the parallel sort runners for comparison.
                     runners = new SortRunner[]{
                                 new BurstsortRunner(),
                                 new BurstsortThreadPoolRunner(),
@@ -139,7 +134,6 @@ public class Benchmark {
                                 new RedesignedBurstsortThreadPoolRunner()
                             };
                 } else {
-                    // If only one CPU core, then don't bother with parallel tests.
                     runners = new SortRunner[]{
                                 new BurstsortRunner(),
                                 new RedesignedBurstsortRunner()
@@ -160,7 +154,7 @@ public class Benchmark {
                         };
             } else if (args[0].equals("--comparable")) {
                 // Benchmark the Comparable-based sorters (i.e. those that
-                // sort instances of Comparable, withouth any assumptions
+                // sort instances of Comparable, without any assumptions
                 // about the input, such as String-based sorters).
                 generators = new DataGenerator[]{
                             new RandomGenerator(),
@@ -209,7 +203,8 @@ public class Benchmark {
                             new BurstsortRunner(),
                             new BurstsortThreadPoolRunner(),
                             new RedesignedBurstsortRunner(),
-                            new RedesignedBurstsortThreadPoolRunner()
+                            new RedesignedBurstsortThreadPoolRunner(),
+                            new LazyFunnelsortRunner()
                         };
             } else {
                 runners = new SortRunner[]{
@@ -217,8 +212,8 @@ public class Benchmark {
                             new QuicksortRunner(),
                             new MultikeyRunner(),
                             new BurstsortRunner(),
-                            new RedesignedBurstsortRunner()
-                        };
+                            new RedesignedBurstsortRunner(),
+                            new LazyFunnelsortRunner(),};
             }
         } else {
             usage();
