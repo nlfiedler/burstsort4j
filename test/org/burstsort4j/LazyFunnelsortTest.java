@@ -314,4 +314,32 @@ public class LazyFunnelsortTest {
             fail(ioe.toString());
         }
     }
+
+    @Test
+    public void testSmallShuffledThreaded() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            data = data.subList(0, 1024);
+            String[] arr = data.toArray(new String[data.size()]);
+            LazyFunnelsort.sortThreaded(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+    @Test
+    public void testDictWordsThreaded() {
+        try {
+            // Use the large dictionary rather than the trivial one.
+            List<String> data = Tests.loadData("dictwords.gz", true);
+            Collections.shuffle(data);
+            String[] arr = data.toArray(new String[data.size()]);
+            LazyFunnelsort.sortThreaded(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
 }

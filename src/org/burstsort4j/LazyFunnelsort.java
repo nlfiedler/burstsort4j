@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An implementation of the lazy funnelsort algorithm as described by Brodal,
@@ -53,31 +57,79 @@ public class LazyFunnelsort {
         if (inputs == null || inputs.length < 2) {
             return;
         }
-        sort(inputs, 0, inputs.length);
+        sort(inputs, 0, inputs.length, false);
+    }
+
+    /**
+     * Sorts the set of Comparables using the "lazy" funnelsort algorithm
+     * as described by Brodal, Fagerberg, and Vinther. The sorting is
+     * performed using multiple threads in order to shorten the overall
+     * sort time.
+     *
+     * @param  inputs  array of Comparables to be sorted.
+     */
+    public static void sortThreaded(Comparable[] inputs) {
+        if (inputs == null || inputs.length < 2) {
+            return;
+        }
+        sort(inputs, 0, inputs.length, true);
     }
 
     /**
      * Sorts the elements within the array starting at the offset and
      * ending at offset plus the count.
      *
-     * @param  inputs  array containing elements to be sorted.
-     * @param  offset  first position within array to be sorted.
-     * @param  count   number of elements from offset to be sorted.
+     * @param  inputs    array containing elements to be sorted.
+     * @param  offset    first position within array to be sorted.
+     * @param  count     number of elements from offset to be sorted.
+     * @param  threaded  true to use multiple threads, false otherwise.
      */
     @SuppressWarnings("unchecked")
-    private static void sort(Comparable[] inputs, int offset, int count) {
+    private static void sort(final Comparable[] inputs, final int offset,
+            final int count, boolean threaded) {
         if (count > QUICKSORT_THRESHOLD) {
             // Divide input into n^(1/3) arrays of size n^(2/3) and sort each.
             final int num_blocks = Math.round((float) Math.cbrt((double) count));
             final int block_size = count / num_blocks;
             int mark = offset;
-            for (int ii = 1; ii < num_blocks; ii++) {
-                sort(inputs, mark, block_size);
-                mark += block_size;
-            }
-            int leftover = count - (mark - offset);
-            if (leftover > 0) {
-                sort(inputs, mark, leftover);
+            if (threaded) {
+                // In multi-threaded mode, create a set of jobs to sort each
+                // of the subarrays and run those jobs on multiple threads.
+                List<Callable<Object>> jobs = new ArrayList<Callable<Object>>();
+                for (int ii = 1; ii < num_blocks; ii++) {
+                    jobs.add(new SortJob(inputs, mark, block_size));
+                    mark += block_size;
+                }
+                final int leftover = count - (mark - offset);
+                if (leftover > 0) {
+                    jobs.add(new SortJob(inputs, mark, leftover));
+                }
+                // Use the number of available processors to determine the
+                // size of the thread pool, since having more threads does
+                // not improve overall performance with a CPU-intensive task.
+                ExecutorService executor = Executors.newFixedThreadPool(
+                        Runtime.getRuntime().availableProcessors());
+                try {
+                    executor.invokeAll(jobs);
+                    // Shut down to let the VM exit normally.
+                    executor.shutdown();
+                    executor.awaitTermination(1, TimeUnit.DAYS);
+                } catch (InterruptedException ie) {
+                    throw new RuntimeException("Sorters interrupted!", ie);
+                }
+                // Once the subarrays have been sorted, we merge them in a
+                // single thread, just as in the single-threaded case.
+            } else {
+                // In single-threaded mode, just sort the subarrays
+                // sequentially in the current thread.
+                for (int ii = 1; ii < num_blocks; ii++) {
+                    sort(inputs, mark, block_size, false);
+                    mark += block_size;
+                }
+                int leftover = count - (mark - offset);
+                if (leftover > 0) {
+                    sort(inputs, mark, leftover, false);
+                }
             }
 
             // Merge the n^(1/3) sorted arrays using a k-merger.
@@ -88,7 +140,7 @@ public class LazyFunnelsort {
                 buffers.add(new CircularBuffer<Comparable>(inputs, mark, block_size, false));
                 mark += block_size;
             }
-            leftover = count - (mark - offset);
+            int leftover = count - (mark - offset);
             if (leftover > 0) {
                 buffers.add(new CircularBuffer<Comparable>(inputs, mark, leftover, false));
             }
@@ -105,6 +157,39 @@ public class LazyFunnelsort {
         } else {
             // For small subarrays, delegate to quicksort.
             Quicksort.sort(inputs, offset, offset + count - 1);
+        }
+    }
+
+    /**
+     * A SortJob is a simple Callable that invokes the sort() method with
+     * the values given in the constructor.
+     */
+    private static class SortJob implements Callable<Object> {
+
+        /** The inputs to be sorted. */
+        private final Comparable[] inputs;
+        /** Offset of the first element to be sorted. */
+        private final int offset;
+        /** Number of elements to be sorted. */
+        private final int count;
+
+        /**
+         * Creates a new instance of SortJob.
+         *
+         * @param  inputs  array containing elements to be sorted.
+         * @param  offset  first position within array to be sorted.
+         * @param  count   number of elements from offset to be sorted.
+         */
+        public SortJob(Comparable[] inputs, int offset, int count) {
+            this.inputs = inputs;
+            this.offset = offset;
+            this.count = count;
+        }
+
+        @Override
+        public Object call() throws Exception {
+            sort(inputs, offset, count, false);
+            return null;
         }
     }
 

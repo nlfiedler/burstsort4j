@@ -102,7 +102,8 @@ public class Benchmark {
                             new BurstsortThreadPoolRunner(),
                             new RedesignedBurstsortRunner(),
                             new RedesignedBurstsortThreadPoolRunner(),
-                            new LazyFunnelsortRunner()
+                            new LazyFunnelsortRunner(),
+                            new ThreadedLazyFunnelsortRunner()
                         };
             } else {
                 runners = new SortRunner[]{
@@ -149,9 +150,16 @@ public class Benchmark {
                             new GenomeGenerator()
                         };
                 sizes = DataSize.values();
-                runners = new SortRunner[]{
-                            new LazyFunnelsortRunner()
-                        };
+                if (Runtime.getRuntime().availableProcessors() > 1) {
+                    runners = new SortRunner[]{
+                                new LazyFunnelsortRunner(),
+                                new ThreadedLazyFunnelsortRunner()
+                            };
+                } else {
+                    runners = new SortRunner[]{
+                                new LazyFunnelsortRunner()
+                            };
+                }
             } else if (args[0].equals("--comparable")) {
                 // Benchmark the Comparable-based sorters (i.e. those that
                 // sort instances of Comparable, without any assumptions
@@ -204,7 +212,8 @@ public class Benchmark {
                             new BurstsortThreadPoolRunner(),
                             new RedesignedBurstsortRunner(),
                             new RedesignedBurstsortThreadPoolRunner(),
-                            new LazyFunnelsortRunner()
+                            new LazyFunnelsortRunner(),
+                            new ThreadedLazyFunnelsortRunner()
                         };
             } else {
                 runners = new SortRunner[]{
@@ -722,6 +731,22 @@ public class Benchmark {
         @Override
         public void sort(String[] data) {
             LazyFunnelsort.sort(data);
+        }
+    }
+
+    /**
+     * Runs the multi-threaded lazy funnelsort implementation.
+     */
+    private static class ThreadedLazyFunnelsortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "LazyFunnelsort|TP|";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            LazyFunnelsort.sortThreaded(data);
         }
     }
 
