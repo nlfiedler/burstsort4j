@@ -224,18 +224,16 @@ public class LazyFunnelsort {
         public static Kmerger createMerger(
                 List<CircularBuffer<Comparable>> inputs, int offset,
                 int count, CircularBuffer<Comparable> output) {
-            int k = count;
             // Tests indicate the values of 8 and 16 do not help performance.
-            if (k > 4) {
+            if (count > 4) {
                 return new BufferMerger(inputs, offset, count, output);
             } else {
                 // Convert the sublist to an array for insertion merger.
                 CircularBuffer[] buffers = new CircularBuffer[count];
                 ListIterator<CircularBuffer<Comparable>> li =
                         inputs.listIterator(offset);
-                int c = 0;
-                while (c < count) {
-                    buffers[c++] = li.next();
+                for (int ii = 0; ii < count; ii++) {
+                    buffers[ii] = li.next();
                 }
                 return new InsertionMerger(buffers, output);
             }
