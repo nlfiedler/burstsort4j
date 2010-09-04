@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2008-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ public class Quicksort {
     /**
      * Creates a new instance of Quicksort.
      */
-    public Quicksort() {
+    private Quicksort() {
     }
 
     /**
@@ -68,7 +68,7 @@ public class Quicksort {
     public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         if (low + THRESHOLD > high) {
             // Insertion sort for small partitions.
-            Insertionsort.sort(arr, low, high);
+            BinaryInsertionsort.sort(arr, low, high);
         } else {
             // Choose a partition element
             int middle = (low + high) / 2;
@@ -117,7 +117,7 @@ public class Quicksort {
      * @param  x  the index of the first object.
      * @param  y  the index of the second object.
      */
-    private static final void swap(Object[] a, int x, int y) {
+    private static void swap(Object[] a, int x, int y) {
         Object tmp = a[x];
         a[x] = a[y];
         a[y] = tmp;

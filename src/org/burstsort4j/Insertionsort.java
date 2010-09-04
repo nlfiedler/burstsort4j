@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2008-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,9 @@ package org.burstsort4j;
  */
 public class Insertionsort {
 
+    private Insertionsort() {
+    }
+
     /**
      * Sort the array of comparables within the given range of elements.
      * Uses a simple insertion sort algorithm, so expect O(n^2) running
@@ -42,21 +45,21 @@ public class Insertionsort {
         }
 
         for (int i = low + 1; i <= high; i++) {
-            T tmp = arr[i];
+            T pivot = arr[i];
             int j = i;
-            while (j > low && tmp.compareTo(arr[j - 1]) < 0) {
+            while (j > low && pivot.compareTo(arr[j - 1]) < 0) {
                 arr[j] = arr[j - 1];
                 j--;
             }
-            arr[j] = tmp;
+            arr[j] = pivot;
         }
     }
 
     /**
      * Sort the strings in the array using an insertion sort, but only
      * consider the characters in the strings starting from the given
-     * offset <em>d</em>. That is, the method will ignore all characters
-     * appearing before the <em>d</em>th character.
+     * offset <em>depth</em>. That is, the method will ignore all characters
+     * appearing before the <em>depth</em> character.
      *
      * @param  strings  array of strings to sort.
      * @param  low      low offset into the array (inclusive).
