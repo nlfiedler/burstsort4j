@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@
 package org.burstsort4j;
 
 /**
- * Shell sort implementation based on psuedocode from Wikipedia.
+ * Shell sort implementation based on pseudocode from Wikipedia.
  *
  * @author  Nathan Fiedler
  */
 public class Shellsort {
+
+    private Shellsort() {
+    }
 
     /**
      * Sort the input array using the shell sort algorithm with the gap

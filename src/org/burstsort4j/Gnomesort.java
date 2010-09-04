@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@
 package org.burstsort4j;
 
 /**
- * Implementation of Gnome sort based on psuedocode on Wikipedia.
+ * Implementation of Gnome sort based on pseudocode on Wikipedia.
  *
  * @author Nathan Fiedler
  */
 public class Gnomesort {
+
+    private Gnomesort() {
+    }
 
     /**
      * Sort the input array using the Gnome sort algorithm.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,14 @@
 package org.burstsort4j;
 
 /**
- * Basic selection sort implementation based on psuedocode on Wikipedia.
+ * Basic selection sort implementation based on pseudocode on Wikipedia.
  *
  * @author  Nathan Fiedler
  */
 public class Selectionsort {
+
+    private Selectionsort() {
+    }
 
     /**
      * Sort the input array using the selection sort algorithm.

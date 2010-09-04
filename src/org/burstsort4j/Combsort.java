@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,12 +19,15 @@
 package org.burstsort4j;
 
 /**
- * Implementation of comb sort based on psuedo-code on Wikipedia,
+ * Implementation of comb sort based on pseudo-code on Wikipedia,
  * in particular the Combsort11 algorithm.
  *
  * @author Nathan Fiedler
  */
 public class Combsort {
+
+    private Combsort() {
+    }
 
     /**
      * Sort the input array using the Combsort11 algorithm.
