@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2008-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ public class Benchmark {
             // of the data sizes.
             generators = new DataGenerator[]{
                         new RandomGenerator(),
-                        new PsuedoWordGenerator(),
+                        new PseudoWordGenerator(),
                         new RepeatGenerator(),
                         new SmallAlphabetGenerator(),
                         new RepeatCycleGenerator(),
@@ -120,7 +120,7 @@ public class Benchmark {
             if (args[0].equals("--burstsort")) {
                 generators = new DataGenerator[]{
                             new RandomGenerator(),
-                            new PsuedoWordGenerator(),
+                            new PseudoWordGenerator(),
                             new RepeatGenerator(),
                             new SmallAlphabetGenerator(),
                             new RepeatCycleGenerator(),
@@ -143,7 +143,7 @@ public class Benchmark {
             } else if (args[0].equals("--funnelsort")) {
                 generators = new DataGenerator[]{
                             new RandomGenerator(),
-                            new PsuedoWordGenerator(),
+                            new PseudoWordGenerator(),
                             new RepeatGenerator(),
                             new SmallAlphabetGenerator(),
                             new RepeatCycleGenerator(),
@@ -160,13 +160,26 @@ public class Benchmark {
                                 new LazyFunnelsortRunner()
                             };
                 }
+            } else if (args[0].equals("--mqsort")) {
+                generators = new DataGenerator[]{
+                            new RandomGenerator(),
+                            new PseudoWordGenerator(),
+                            new RepeatGenerator(),
+                            new SmallAlphabetGenerator(),
+                            new RepeatCycleGenerator(),
+                            new GenomeGenerator()
+                        };
+                sizes = DataSize.values();
+                runners = new SortRunner[]{
+                            new MultikeyRunner()
+                        };
             } else if (args[0].equals("--comparable")) {
                 // Benchmark the Comparable-based sorters (i.e. those that
                 // sort instances of Comparable, without any assumptions
                 // about the input, such as String-based sorters).
                 generators = new DataGenerator[]{
                             new RandomGenerator(),
-                            new PsuedoWordGenerator(),
+                            new PseudoWordGenerator(),
                             new RepeatGenerator(),
                             new SmallAlphabetGenerator(),
                             new RepeatCycleGenerator(),
@@ -243,6 +256,7 @@ public class Benchmark {
         System.out.println("\t--burstsort: run only the burstsort tests, with the multi-threaded");
         System.out.println("\t             versions if multiple CPU cores are present.");
         System.out.println("\t--funnelsort: run only the funnelsort tests");
+        System.out.println("\t--mqsort: run only the multikey quicksort tests");
         System.out.println("\t--comparable: run the tests for Comparable sorters");
         System.out.println("\t--1: load 333k lines from file and benchmark.");
         System.out.println("\t--2: load 1m lines from file and benchmark.");
@@ -339,7 +353,7 @@ public class Benchmark {
          *
          * @param  msg  explanatory message.
          */
-        public GeneratorException(String msg) {
+        GeneratorException(String msg) {
             super(msg);
         }
 
@@ -348,7 +362,7 @@ public class Benchmark {
          *
          * @param  cause  cause of the exception.
          */
-        public GeneratorException(Throwable cause) {
+        GeneratorException(Throwable cause) {
             super(cause);
         }
     }
@@ -390,7 +404,7 @@ public class Benchmark {
          *
          * @param  file  that which contains test data.
          */
-        public FileGenerator(File file) {
+        FileGenerator(File file) {
             this.file = file;
         }
 
@@ -471,11 +485,11 @@ public class Benchmark {
     }
 
     /**
-     * Generates a set of psuedo words, comprised of at least one letter,
+     * Generates a set of pseudo words, comprised of at least one letter,
      * up to the length of the longest (real) English word, using only
      * the lower-case letters.
      */
-    private static class PsuedoWordGenerator implements DataGenerator {
+    private static class PseudoWordGenerator implements DataGenerator {
 
         /** Longest (real) word in English: antidisestablishmentarianism */
         private static final int LONGEST = 28;
@@ -502,7 +516,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Psuedo words";
+            return "Pseudo words";
         }
     }
 
