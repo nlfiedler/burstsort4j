@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package org.burstsort4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -88,18 +89,18 @@ public class MicroBenchmark {
     public static void main(String[] args) {
         DataGenerator[] generators = new DataGenerator[]{
                     new RandomGenerator(),
-                    new PsuedoWordGenerator(),
+                    new PseudoWordGenerator(),
                     new RepeatGenerator(),
                     new SmallAlphabetGenerator(),
                     new RepeatCycleGenerator(),
                     new GenomeGenerator()
                 };
         SortRunner[] runners = new SortRunner[]{
-                    new BubblesortRunner(),
                     new CombsortRunner(),
                     new GnomesortRunner(),
                     new HeapsortRunner(),
                     new InsertionsortRunner(),
+                    new BinaryInsertionsortRunner(),
                     new QuicksortRunner(),
                     new SelectionsortRunner(),
                     new ShellsortRunner()
@@ -115,7 +116,7 @@ public class MicroBenchmark {
     /**
      * Runs a set of sort routines over test data, as provided by the
      * given data generators. Performs a warmup run first to get all
-     * of the classes compiled by the JVM, to avoid skewing the resuls.
+     * of the classes compiled by the JVM, to avoid skewing the results.
      *
      * @param  generators  set of data generators to use.
      * @param  runners     set of sorters to compare.
@@ -185,7 +186,7 @@ public class MicroBenchmark {
          *
          * @param  msg  explanatory message.
          */
-        public GeneratorException(String msg) {
+        GeneratorException(String msg) {
             super(msg);
         }
 
@@ -194,7 +195,7 @@ public class MicroBenchmark {
          *
          * @param  cause  cause of the exception.
          */
-        public GeneratorException(Throwable cause) {
+        GeneratorException(Throwable cause) {
             super(cause);
         }
     }
@@ -222,11 +223,11 @@ public class MicroBenchmark {
     }
 
     /**
-     * Generates a set of psuedo words, comprised of at least one letter,
+     * Generates a set of pseudo words, comprised of at least one letter,
      * up to the length of the longest (real) English word, using only
      * the lower-case letters.
      */
-    private static class PsuedoWordGenerator implements DataGenerator {
+    private static class PseudoWordGenerator implements DataGenerator {
         /** Longest (real) word in English: antidisestablishmentarianism */
         private static final int LONGEST = 28;
         /** Letters in the English alphabet (lower case only) */
@@ -252,7 +253,7 @@ public class MicroBenchmark {
 
         @Override
         public String getDisplayName() {
-            return "Psuedo words";
+            return "Pseudo words";
         }
     }
 
@@ -439,19 +440,6 @@ public class MicroBenchmark {
         void sort(String[] data);
     }
 
-    private static class BubblesortRunner implements SortRunner {
-
-        @Override
-        public String getDisplayName() {
-            return "Bubblesort";
-        }
-
-        @Override
-        public void sort(String[] data) {
-            Bubblesort.sort(data);
-        }
-    }
-
     private static class CombsortRunner implements SortRunner {
 
         @Override
@@ -501,6 +489,19 @@ public class MicroBenchmark {
         @Override
         public void sort(String[] data) {
             Insertionsort.sort(data, 0, data.length - 1);
+        }
+    }
+
+    private static class BinaryInsertionsortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "BinInsertionsort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            BinaryInsertionsort.sort(data, 0, data.length - 1);
         }
     }
 
