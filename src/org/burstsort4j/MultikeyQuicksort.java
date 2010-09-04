@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2008-2010  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ public class MultikeyQuicksort {
      * @param  d  offset.
      * @return  character in s at d, or zero.
      */
-    private static final char charAt(CharSequence s, int d) {
+    private static char charAt(CharSequence s, int d) {
         return d < s.length() ? s.charAt(d) : 0;
     }
 
@@ -71,7 +71,7 @@ public class MultikeyQuicksort {
 
     /**
      * Sorts the array of strings using a multikey quicksort that chooses
-     * a pivot point using a "median of three" rule (or psuedo median of
+     * a pivot point using a "median of three" rule (or pseudo median of
      * nine for arrays over a certain threshold). For very small subarrays,
      * an insertion sort is used.
      *
@@ -85,7 +85,7 @@ public class MultikeyQuicksort {
 
     /**
      * Sorts the array of strings using a multikey quicksort that chooses
-     * a pivot point using a "median of three" rule (or psuedo median of
+     * a pivot point using a "median of three" rule (or pseudo median of
      * nine for arrays over a certain threshold). For very small subarrays,
      * an insertion sort is used.
      * 
@@ -140,7 +140,7 @@ public class MultikeyQuicksort {
      */
     private static void ssort(CharSequence[] a, int base, int n, int depth) {
         if (n < THRESHOLD) {
-            Insertionsort.sort(a, base, base + n, depth);
+            BinaryInsertionsort.sort(a, base, base + n, depth);
             return;
         }
         int pl = base;
@@ -148,7 +148,7 @@ public class MultikeyQuicksort {
         int pn = base + n - 1;
         int r;
         if (n > 30) {
-            // On larger arrays, find a psuedo median of nine elements.
+            // On larger arrays, find a pseudo median of nine elements.
             int d = n / 8;
             pl = med3(a, base, base + d, base + 2 * d, depth);
             pm = med3(a, base + n / 2 - d, pm, base + n / 2 + d, depth);
