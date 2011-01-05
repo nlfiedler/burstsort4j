@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2010  Nathan Fiedler
+ * Copyright (C) 2009-2011  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ package org.burstsort4j;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -34,11 +33,11 @@ import java.util.Random;
 public class MicroBenchmark {
     /** Size of the data sets used in testing sort performance. */
     private static enum DataSize {
-        N_10   (10, 100000),
-        N_20   (20,  50000),
-        N_50   (50,  20000),
-        N_100 (100,  10000),
-        N_400 (400,   2500);
+        N_10   (10, 5000000),
+        N_20   (20, 2500000),
+        N_50   (50, 1000000),
+        N_100 (100,  250000),
+        N_400 (400,   50000);
         /** The quantity for this data size. */
         private final int value;
         /** Number of times to run this particular test. */
@@ -159,6 +158,16 @@ public class MicroBenchmark {
                             // Verify the results are actually sorted, just
                             // in case the unit tests missed something.
                             for (int ii = 1; ii < arr.length; ii++) {
+                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
+                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
+                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
+                                    System.exit(1);
+                                }
+                            }
+                        } else {
+                            // Perform a spot check of the results so the
+                            // JIT does not optimize away the sorter.
+                            for (int ii = 1; ii < arr.length; ii += 10) {
                                 if (arr[ii - 1].compareTo(arr[ii]) > 0) {
                                     System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
                                     System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
