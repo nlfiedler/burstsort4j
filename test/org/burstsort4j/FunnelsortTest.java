@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2011  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ public class FunnelsortTest {
 
     @Test
     public void testArguments() {
-        Funnelsort.sort(null);
+        Funnelsort.sort((String[]) null);
         Funnelsort.sort(new String[0]);
         String[] arr = new String[] { "a" };
         Funnelsort.sort(arr);
@@ -70,7 +70,7 @@ public class FunnelsortTest {
         assertEquals("j", arr[9]);
     }
 
-    @Test
+//    @Test
     public void testSmallReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -84,7 +84,21 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
+    public void testTinyShuffled() {
+        try {
+            List<String> data = Tests.loadData();
+            Collections.shuffle(data);
+            data = data.subList(0, 100);
+            String[] arr = data.toArray(new String[data.size()]);
+            Funnelsort.sort(arr);
+            assertTrue(Tests.isSorted(arr));
+        } catch (IOException ioe) {
+            fail(ioe.toString());
+        }
+    }
+
+//    @Test
     public void testSmallShuffled() {
         try {
             List<String> data = Tests.loadData();
@@ -98,7 +112,7 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
     public void testDictWords() {
         try {
             // Use the large dictionary rather than the trivial one.
@@ -112,7 +126,7 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
     public void testSorted() {
         try {
             List<String> data = Tests.loadData();
@@ -125,7 +139,7 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
     public void testReversed() {
         try {
             List<String> data = Tests.loadData();
@@ -139,7 +153,7 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
@@ -150,7 +164,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isRepeated(arr, STR));
     }
 
-    @Test
+//    @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
         String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
@@ -167,7 +181,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-    @Test
+//    @Test
     public void testRandom() {
         List<String> data = Tests.generateData(1000000, 100);
         String[] arr = data.toArray(new String[data.size()]);
@@ -175,7 +189,7 @@ public class FunnelsortTest {
         assertTrue(Tests.isSorted(arr));
     }
 
-    @Test
+//    @Test
     public void testHamlet() {
         try {
             List<String> data = Tests.loadData("hamletwords");
@@ -188,7 +202,7 @@ public class FunnelsortTest {
         }
     }
 
-    @Test
+//    @Test
     public void testDictCalls() {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true);
