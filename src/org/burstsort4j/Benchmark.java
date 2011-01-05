@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2010  Nathan Fiedler
+ * Copyright (C) 2008-2011  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -309,6 +309,16 @@ public class Benchmark {
                             // Verify the results are actually sorted, just
                             // in case the unit tests missed something.
                             for (int ii = 1; ii < arr.length; ii++) {
+                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
+                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
+                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
+                                    System.exit(1);
+                                }
+                            }
+                        } else {
+                            // Perform a spot check of the results so the
+                            // JIT does not optimize away the sorter.
+                            for (int ii = 1; ii < arr.length; ii += 1000) {
                                 if (arr[ii - 1].compareTo(arr[ii]) > 0) {
                                     System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
                                     System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
@@ -707,7 +717,7 @@ public class Benchmark {
             try {
                 Burstsort.sortThreadPool(data);
             } catch (InterruptedException ie) {
-                ie.printStackTrace();
+                throw new RuntimeException(ie);
             }
         }
     }
@@ -727,7 +737,7 @@ public class Benchmark {
             try {
                 RedesignedBurstsort.sortThreadPool(data);
             } catch (InterruptedException ie) {
-                ie.printStackTrace();
+                throw new RuntimeException(ie);
             }
         }
     }
