@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009  Nathan Fiedler
+ * Copyright (C) 2009-2011  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,10 @@ import static org.junit.Assert.*;
  * @author Nathan Fiedler
  */
 public class GnomesortTest {
+    /** Maximum number of lines to test for any given file, which avoids
+     * spending far too much time testing insertion sort on data sets
+     * that it will never actually be called upon to sort in practice. */
+    private static final int MAX_LINES = 512;
 
     @Test
     public void testArguments() {
@@ -51,7 +55,7 @@ public class GnomesortTest {
     @Test
     public void testDictWords() {
         try {
-            List<String> data = Tests.loadData();
+            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Gnomesort.sort(arr);
@@ -64,7 +68,7 @@ public class GnomesortTest {
     @Test
     public void testSorted() {
         try {
-            List<String> data = Tests.loadData();
+            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.sort(data);
             String[] arr = data.toArray(new String[data.size()]);
             Gnomesort.sort(arr);
@@ -77,7 +81,7 @@ public class GnomesortTest {
     @Test
     public void testReversed() {
         try {
-            List<String> data = Tests.loadData();
+            List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.sort(data);
             Collections.reverse(data);
             String[] arr = data.toArray(new String[data.size()]);
@@ -91,7 +95,7 @@ public class GnomesortTest {
     @Test
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
-        String[] arr = new String[10000];
+        String[] arr = new String[MAX_LINES];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
                     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, STR);
@@ -118,7 +122,7 @@ public class GnomesortTest {
 
     @Test
     public void testRandom() {
-        List<String> data = Tests.generateData(10000, 100);
+        List<String> data = Tests.generateData(MAX_LINES, 100);
         String[] arr = data.toArray(new String[data.size()]);
         Gnomesort.sort(arr);
         assertTrue(Tests.isSorted(arr));
@@ -127,7 +131,7 @@ public class GnomesortTest {
     @Test
     public void testHamlet() {
         try {
-            List<String> data = Tests.loadData("hamletwords");
+            List<String> data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
             Gnomesort.sort(arr);
@@ -140,7 +144,7 @@ public class GnomesortTest {
     // @Test -- XXX fails to finish or simply takes too long
     public void testDictCalls() {
         try {
-            List<String> data = Tests.loadData("dictcalls.gz", true);
+            List<String> data = Tests.loadData("dictcalls.gz", true, MAX_LINES);
             String[] arr = data.toArray(new String[data.size()]);
             Gnomesort.sort(arr);
             assertTrue(Tests.isSorted(arr));

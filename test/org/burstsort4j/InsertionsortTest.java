@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009  Nathan Fiedler
+ * Copyright (C) 2008-2011  Nathan Fiedler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,12 +85,12 @@ public class InsertionsortTest {
             fail(ioe.toString());
         }
         // Test with repeated strings.
-        String[] arr = new String[16384];
+        String[] arr = new String[MAX_LINES];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         Insertionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
-        List<String> data = Tests.generateData(16384, 64);
+        List<String> data = Tests.generateData(MAX_LINES, 64);
         arr = data.toArray(new String[data.size()]);
         Insertionsort.sort(arr, 0, arr.length - 1);
         assertTrue(Tests.isSorted(arr));
@@ -130,12 +130,12 @@ public class InsertionsortTest {
             fail(ioe.toString());
         }
         // Test with repeated strings.
-        String[] arr = new String[16384];
+        String[] arr = new String[MAX_LINES];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
         Insertionsort.sort(arr, 0, arr.length, 0);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
-        List<String> data = Tests.generateData(16384, 64);
+        List<String> data = Tests.generateData(MAX_LINES, 64);
         arr = data.toArray(new String[data.size()]);
         Insertionsort.sort(arr, 0, arr.length, 0);
         assertTrue(Tests.isSorted(arr));
