@@ -16,12 +16,13 @@
  *
  * $Id$
  */
-
 package org.burstsort4j;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -31,37 +32,28 @@ import java.util.Random;
  * @author Nathan Fiedler
  */
 public class MicroBenchmark {
+
+    /** Number of nanoseconds in one second. */
+    private static final int ONE_BILLION = 1000000000;
+
     /** Size of the data sets used in testing sort performance. */
     private static enum DataSize {
-        N_10   (10, 5000000),
-        N_20   (20, 2500000),
-        N_50   (50, 1000000),
-        N_100 (100,  250000),
-        N_400 (400,   50000);
+
+        N_10(10),
+        N_20(20),
+        N_50(50),
+        N_100(100),
+        N_400(400);
         /** The quantity for this data size. */
         private final int value;
-        /** Number of times to run this particular test. */
-        private final int count;
 
         /**
          * Constructs a DataSize with a particular quantity.
          *
          * @param  value  the quantity.
-         * @param  count  number of times to test this size.
          */
-        DataSize(int value, int count) {
+        DataSize(int value) {
             this.value = value;
-            this.count = count;
-        }
-
-        /**
-         * Returns the number of test iterations to be performed for
-         * this data size.
-         *
-         * @return  run count.
-         */
-        public int getCount() {
-            return count;
         }
 
         /**
@@ -86,126 +78,228 @@ public class MicroBenchmark {
      * @param  args  command-line arguments.
      */
     public static void main(String[] args) {
+// TODO: if --sort argument given, treat as regex to select sorts to measure
+//       e.g. "--sort comb" will run only sorts that have "comb" in the name
+// TODO: if --data argument given, treat as regex to select data set to use
         DataGenerator[] generators = new DataGenerator[]{
-                    new RandomGenerator(),
-                    new PseudoWordGenerator(),
-                    new RepeatGenerator(),
-                    new SmallAlphabetGenerator(),
-                    new RepeatCycleGenerator(),
-                    new GenomeGenerator()
-                };
+            new RepeatGenerator(),
+            new RepeatCycleGenerator(),
+            new RandomGenerator(),
+            new PseudoWordGenerator(),
+            new SmallAlphabetGenerator(),
+            new GenomeGenerator()
+        };
         SortRunner[] runners = new SortRunner[]{
-                    new CombsortRunner(),
-                    new GnomesortRunner(),
-                    new HeapsortRunner(),
-                    new InsertionsortRunner(),
-                    new BinaryInsertionsortRunner(),
-                    new QuicksortRunner(),
-                    new SelectionsortRunner(),
-                    new ShellsortRunner()
-                };
-        DataSize[] sizes = DataSize.values();
-        try {
-            runsorts(generators, runners, sizes);
-        } catch (GeneratorException ge) {
-            ge.printStackTrace();
-        }
-    }
+            new BinaryInsertionsortRunner(),
+            new CombsortRunner(),
+            new GnomesortRunner(),
+            new HeapsortRunner(),
+            new InsertionsortRunner(),
+            new QuicksortRunner(),
+            new SelectionsortRunner(),
+            new ShellsortRunner()
+        };
 
-    /**
-     * Runs a set of sort routines over test data, as provided by the
-     * given data generators. Performs a warmup run first to get all
-     * of the classes compiled by the JVM, to avoid skewing the results.
-     *
-     * @param  generators  set of data generators to use.
-     * @param  runners     set of sorters to compare.
-     * @param  sizes       data sizes to be run.
-     * @throws  GeneratorException  thrown if one of the generators fails.
-     */
-    private static void runsorts(DataGenerator[] generators,
-            SortRunner[] runners, DataSize[] sizes) throws GeneratorException {
-        // Warm up the JVM so that the classes get compiled and the
-        // CPU comes up to full speed.
-        System.out.println("Warming up the system, please wait...");
-        DataSize[] all_sizes = DataSize.values();
+        // Generate the data sets once and reuse hereafter.
+        Map<DataGenerator, String[]> dataSets = new HashMap<DataGenerator, String[]>();
         for (DataGenerator generator : generators) {
-            List<String> data = generator.generate(all_sizes[all_sizes.length - 1]);
+            dataSets.put(generator, generator.generate(DataSize.N_400));
+        }
+
+        // Warm up the JVM so that the code (hopefully) gets compiled.
+        System.out.println("Warming up the system, please wait...");
+        for (DataGenerator generator : generators) {
+            String[] dataSet = dataSets.get(generator);
+            String[] input = new String[dataSet.length];
             for (SortRunner runner : runners) {
-                String[] arr = data.toArray(new String[data.size()]);
-                runner.sort(arr);
+                for (int i = 0; i < 1000; i++) {
+                    System.arraycopy(dataSet, 0, input, 0, input.length);
+                    runner.sort(input);
+                }
             }
         }
 
+        // Avoid recreating the input arrays over and over again.
+        Map<DataSize, String[]> inputSets = new EnumMap<DataSize, String[]>(DataSize.class);
+        for (DataSize size : DataSize.values()) {
+            inputSets.put(size, new String[size.getValue()]);
+        }
+
         // For each type of data set, and each data set size, and
-        // each sort implementation, run the sort several times and
-        // calculate an average run time.
+        // each sort implementation, run the sort many times and
+        // calculate an average.
         for (DataGenerator generator : generators) {
             System.out.format("%s...\n", generator.getDisplayName());
-            for (DataSize size : sizes) {
-                int runCount = size.getCount();
+            final String[] dataSet = dataSets.get(generator);
+            for (DataSize size : DataSize.values()) {
                 System.out.format("\t%s...\n", size.toString());
-                List<String> data = generator.generate(size);
-                for (SortRunner runner : runners) {
+                final String[] input = inputSets.get(size);
+                for (final SortRunner runner : runners) {
                     System.out.format("\t\t%-20s:\t", runner.getDisplayName());
-                    // Track the time for running the test, which includes
-                    // some overhead but that should be fine as it is the
-                    // same for all of the tests.
-                    long t1 = System.currentTimeMillis();
-                    for (int run = 0; run < runCount; run++) {
-                        String[] arr = data.toArray(new String[data.size()]);
-                        runner.sort(arr);
-                        if (run == 0) {
-                            // Verify the results are actually sorted, just
-                            // in case the unit tests missed something.
-                            for (int ii = 1; ii < arr.length; ii++) {
-                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
-                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
-                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
-                                    System.exit(1);
-                                }
-                            }
-                        } else {
-                            // Perform a spot check of the results so the
-                            // JIT does not optimize away the sorter.
-                            for (int ii = 1; ii < arr.length; ii += 10) {
-                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
-                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
-                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
-                                    System.exit(1);
-                                }
+                    final SortRunner func = runner;
+                    BenchRunnable r = new BenchRunnable() {
+
+                        @Override
+                        public void run(BenchData b) {
+                            for (int i = 0; i < b.count(); i++) {
+                                b.stopTimer();
+                                System.arraycopy(dataSet, 0, input, 0, input.length);
+                                b.startTimer();
+                                func.sort(input);
                             }
                         }
-                    }
-                    long t2 = System.currentTimeMillis();
-                    System.out.format("%d ms\n", t2 - t1);
+                    };
+                    BenchData bench = new BenchData(r);
+                    BenchmarkResult result = bench.run();
+                    System.out.format("%8d\t%10d ns/op\n", result.count(), result.nsPerOp());
                 }
             }
         }
     }
 
     /**
-     * Checked exception for the data generators.
+     * That which is run in a single benchmark test.
      */
-    private static class GeneratorException extends Exception {
-        /** silence compiler warnings */
-        private static final long serialVersionUID = 1L;
+    private static interface BenchRunnable {
 
         /**
-         * GeneratorException with a message.
+         * Run the benchmark the number of times specified in {@code b}.
          *
-         * @param  msg  explanatory message.
+         * @param  b  provides the number of iterations.
          */
-        GeneratorException(String msg) {
-            super(msg);
+        void run(BenchData b);
+    }
+
+    /**
+     * The data regarding a benchmark, including the elapsed time and
+     * a timer for tracking the current run.
+     */
+    private static class BenchData {
+
+        private final BenchRunnable func;
+        private int count;
+        private long start;
+        private long ns;
+
+        BenchData(BenchRunnable r) {
+            func = r;
+        }
+
+        public int count() {
+            return count;
+        }
+
+        public void startTimer() {
+            start = System.nanoTime();
+        }
+
+        public void stopTimer() {
+            if (start > 0) {
+                ns += System.nanoTime() - start;
+            }
+            start = 0;
+        }
+
+        public void resetTimer() {
+            start = 0;
+            ns = 0;
+        }
+
+        public long nsPerOp() {
+            if (count <= 0) {
+                return 0;
+            }
+            return ns / count;
+        }
+
+        private void runN(int n) {
+            count = n;
+            resetTimer();
+            startTimer();
+            func.run(this);
+            stopTimer();
+        }
+
+        private int roundDown10(int n) {
+            int tens = 0;
+            while (n > 10) {
+                n /= 10;
+                tens++;
+            }
+            int result = 1;
+            for (int i = 0; i < tens; i++) {
+                result *= 10;
+            }
+            return result;
+        }
+
+        private int roundUp(int n) {
+            int base = roundDown10(n);
+            if (n < (2 * base)) {
+                return 2 * base;
+            }
+            if (n < (5 * base)) {
+                return 5 * base;
+            }
+            return 10 * base;
         }
 
         /**
-         * GeneratorException with a cause.
+         * Run the benchmark function a sufficient number of times to
+         * get a timing of at least one second.
          *
-         * @param  cause  cause of the exception.
+         * @return  the results of the benchmark run.
          */
-        GeneratorException(Throwable cause) {
-            super(cause);
+        public BenchmarkResult run() {
+            // This code is a translation of that found in the Go testing package.
+            // Run the benchmark for a single iteration in case it's expensive.
+            int n = 1;
+            runN(n);
+            // Run the benchmark for at least a second.
+            while (ns < ONE_BILLION && n < ONE_BILLION) {
+                int last = n;
+                // Predict iterations/sec.
+                if (nsPerOp() == 0) {
+                    n = ONE_BILLION;
+                } else {
+                    n = ONE_BILLION / (int) nsPerOp();
+                }
+                // Run more iterations than we think we'll need for a second (1.5x).
+                // Don't grow too fast in case we had timing errors previously.
+                // Be sure to run at least one more than last time.
+                n = Math.max(Math.min(n + n / 2, 100 * last), last + 1);
+                // Round up to something easy to read.
+                n = roundUp(n);
+                runN(n);
+            }
+            return new BenchmarkResult(count, ns);
+
+        }
+    }
+
+    /**
+     * Data regarding the run of a benchmark, including the number of
+     * iterations and the number of nanoseconds per iteration.
+     */
+    private static class BenchmarkResult {
+
+        private final int count;
+        private final long ns;
+
+        BenchmarkResult(int count, long ns) {
+            this.count = count;
+            this.ns = ns;
+        }
+
+        public int count() {
+            return count;
+        }
+
+        public long nsPerOp() {
+            if (count <= 0) {
+                return 0;
+            }
+            return ns / count;
         }
     }
 
@@ -218,10 +312,9 @@ public class MicroBenchmark {
          * Generate data for testing the sort implementations.
          *
          * @param  size  size of the data to be generated.
-         * @return  list of strings.
-         * @throws  GeneratorException  thrown if generation fails.
+         * @return  array of test data.
          */
-        List<String> generate(DataSize size) throws GeneratorException;
+        String[] generate(DataSize size);
 
         /**
          * Returns the display name for this generator.
@@ -237,24 +330,24 @@ public class MicroBenchmark {
      * the lower-case letters.
      */
     private static class PseudoWordGenerator implements DataGenerator {
+
         /** Longest (real) word in English: antidisestablishmentarianism */
         private static final int LONGEST = 28;
         /** Letters in the English alphabet (lower case only) */
         private static final int ALPHABET = 26;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 int length = r.nextInt(LONGEST) + 1;
                 for (int jj = 0; jj < length; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) ('a' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -271,23 +364,23 @@ public class MicroBenchmark {
      * characters from the printable ASCII set (from 32 to 126).
      */
     private static class RandomGenerator implements DataGenerator {
+
         /** Size of the randomly generated strings. */
         private static final int LENGTH = 100;
         /** All printable characters in US-ASCII. */
         private static final int ALPHABET = 95;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 for (int jj = 0; jj < LENGTH; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) (' ' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -307,12 +400,12 @@ public class MicroBenchmark {
     private static class RepeatGenerator implements DataGenerator {
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
+        public String[] generate(DataSize size) {
             int count = size.getValue();
             List<String> list = Collections.nCopies(count,
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-            return list;
+                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+            return list.toArray(new String[count]);
         }
 
         @Override
@@ -329,16 +422,21 @@ public class MicroBenchmark {
     private static class RepeatCycleGenerator implements DataGenerator {
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
+        public String[] generate(DataSize size) {
             String[] strs = new String[100];
-            String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-            for (int i = 0, l = 1; i < strs.length; i++, l++) {
-                strs[i] = seed.substring(0, l);
+            String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+            for (int i = 0; i < strs.length; i++) {
+                strs[i] = seed.substring(0, i + 1);
             }
-            List<String> list = new ArrayList<String>();
-            for (int c = size.getValue(), i = 0; c > 0; i++, c--) {
-                list.add(strs[i % strs.length]);
+            String[] list = new String[size.getValue()];
+            int c = 0;
+            for (int ii = 0; ii < list.length; ii++) {
+                list[ii] = strs[c];
+                c++;
+                if (c >= strs.length) {
+                    c = 0;
+                }
             }
             return list;
         }
@@ -355,24 +453,24 @@ public class MicroBenchmark {
      * pathological cases to stress test the sort.
      */
     private static class SmallAlphabetGenerator implements DataGenerator {
+
         /** Longest string to be created. */
         private static final int LONGEST = 100;
         /** Small alphabet size. */
         private static final int ALPHABET = 9;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 int length = r.nextInt(LONGEST) + 1;
                 for (int jj = 0; jj < length; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) ('a' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -389,18 +487,18 @@ public class MicroBenchmark {
      * characters from the genome alphabet.
      */
     private static class GenomeGenerator implements DataGenerator {
+
         /** Size of the randomly generated strings. */
         private static final int LENGTH = 9;
         /** Size of the genome alphabet (a, c, g, t). */
         private static final int ALPHABET = 4;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 for (int jj = 0; jj < LENGTH; jj++) {
                     switch (r.nextInt(ALPHABET)) {
                         case 0:
@@ -417,7 +515,7 @@ public class MicroBenchmark {
                             break;
                     }
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;

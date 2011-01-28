@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -117,6 +116,10 @@ public class Benchmark {
             }
             sizes = DataSize.values();
         } else if (args.length == 1) {
+// TODO: if --sort argument given, treat as regex to select sorts to measure
+//       e.g. "--sort comb" will run only sorts that have "comb" in the name
+//       special case: --sort comparable will use all the Comparable based sorts
+// TODO: if --data argument given, treat as regex to select data set to use
             if (args[0].equals("--burstsort")) {
                 generators = new DataGenerator[]{
                             new RandomGenerator(),
@@ -277,55 +280,36 @@ public class Benchmark {
      */
     private static void runsorts(DataGenerator[] generators,
             SortRunner[] runners, DataSize[] sizes) throws GeneratorException {
-        // Warm up the JVM so that the classes get compiled and the
-        // CPU comes up to full speed.
+
+        // Warm up the JVM so that the code (hopefully) gets compiled.
         System.out.println("Warming up the system, please wait...");
+        String[] input = new String[DataSize.SMALL.getValue()];
         for (DataGenerator generator : generators) {
-            List<String> data = generator.generate(DataSize.SMALL);
+            String[] dataSet = generator.generate(DataSize.SMALL);
             for (SortRunner runner : runners) {
-                String[] arr = data.toArray(new String[data.size()]);
-                runner.sort(arr);
+                System.arraycopy(dataSet, 0, input, 0, input.length);
+                runner.sort(input);
             }
         }
 
         // For each type of data set, and each data set size, and
         // each sort implementation, run the sort several times and
-        // calculate an average run time.
+        // calculate the average run time.
         for (DataGenerator generator : generators) {
             System.out.format("%s...\n", generator.getDisplayName());
             for (DataSize size : sizes) {
                 System.out.format("\t%s...\n", size.toString());
-                List<String> data = generator.generate(size);
+                String[] dataSet = generator.generate(size);
+                input = new String[size.getValue()];
                 for (SortRunner runner : runners) {
                     System.out.format("\t\t%-20s:\t", runner.getDisplayName());
                     long[] times = new long[RUN_COUNT];
                     for (int run = 0; run < times.length; run++) {
-                        String[] arr = data.toArray(new String[data.size()]);
+                        System.arraycopy(dataSet, 0, input, 0, input.length);
                         long t1 = System.currentTimeMillis();
-                        runner.sort(arr);
+                        runner.sort(input);
                         long t2 = System.currentTimeMillis();
                         times[run] = t2 - t1;
-                        if (run == 0) {
-                            // Verify the results are actually sorted, just
-                            // in case the unit tests missed something.
-                            for (int ii = 1; ii < arr.length; ii++) {
-                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
-                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
-                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
-                                    System.exit(1);
-                                }
-                            }
-                        } else {
-                            // Perform a spot check of the results so the
-                            // JIT does not optimize away the sorter.
-                            for (int ii = 1; ii < arr.length; ii += 1000) {
-                                if (arr[ii - 1].compareTo(arr[ii]) > 0) {
-                                    System.err.format("\n\nSort %s failed!\n", runner.getDisplayName());
-                                    System.err.format("%s > %s @ %d\n", arr[ii - 1], arr[ii], ii);
-                                    System.exit(1);
-                                }
-                            }
-                        }
                     }
 
                     // Find the average of the run times. The run times
@@ -386,10 +370,10 @@ public class Benchmark {
          * Generate data for testing the sort implementations.
          *
          * @param  size  size of the data to be generated.
-         * @return  list of strings.
+         * @return  array of test data.
          * @throws  GeneratorException  thrown if generation fails.
          */
-        List<String> generate(DataSize size) throws GeneratorException;
+        String[] generate(DataSize size) throws GeneratorException;
 
         /**
          * Returns the display name for this generator.
@@ -419,16 +403,18 @@ public class Benchmark {
         }
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
+        public String[] generate(DataSize size) throws GeneratorException {
             int count = size.getValue();
-            List<String> data = new ArrayList<String>(count);
+            String[] data = new String[count];
             try {
                 FileReader fr = new FileReader(file);
                 BufferedReader br = new BufferedReader(fr);
                 String line = br.readLine();
-                while (line != null && count > 0) {
-                    data.add(line);
-                    count--;
+                for (int ii = 0; count > 0; ii++, count--) {
+                    if (line == null) {
+                        break;
+                    }
+                    data[ii] = line;
                     line = br.readLine();
                 }
             } catch (IOException ioe) {
@@ -460,12 +446,11 @@ public class Benchmark {
         private static final int ALPHABET = 4;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) throws GeneratorException {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 for (int jj = 0; jj < LENGTH; jj++) {
                     switch (r.nextInt(ALPHABET)) {
                         case 0:
@@ -482,7 +467,7 @@ public class Benchmark {
                             break;
                     }
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -507,18 +492,17 @@ public class Benchmark {
         private static final int ALPHABET = 26;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) throws GeneratorException {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 int length = r.nextInt(LONGEST) + 1;
                 for (int jj = 0; jj < length; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) ('a' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -542,17 +526,16 @@ public class Benchmark {
         private static final int ALPHABET = 95;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) throws GeneratorException {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 for (int jj = 0; jj < LENGTH; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) (' ' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
@@ -572,12 +555,12 @@ public class Benchmark {
     private static class RepeatGenerator implements DataGenerator {
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
+        public String[] generate(DataSize size) throws GeneratorException {
             int count = size.getValue();
             List<String> list = Collections.nCopies(count,
                     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-            return list;
+            return list.toArray(new String[count]);
         }
 
         @Override
@@ -594,16 +577,21 @@ public class Benchmark {
     private static class RepeatCycleGenerator implements DataGenerator {
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
+        public String[] generate(DataSize size) throws GeneratorException {
             String[] strs = new String[100];
             String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
             for (int i = 0, l = 1; i < strs.length; i++, l++) {
                 strs[i] = seed.substring(0, l);
             }
-            List<String> list = new ArrayList<String>();
-            for (int c = size.getValue(), i = 0; c > 0; i++, c--) {
-                list.add(strs[i % strs.length]);
+            String[] list = new String[size.getValue()];
+            int c = 0;
+            for (int ii = 0; ii < list.length; ii++) {
+                list[ii] = strs[c];
+                c++;
+                if (c >= strs.length) {
+                    c = 0;
+                }
             }
             return list;
         }
@@ -627,18 +615,17 @@ public class Benchmark {
         private static final int ALPHABET = 9;
 
         @Override
-        public List<String> generate(DataSize size) throws GeneratorException {
-            int count = size.getValue();
+        public String[] generate(DataSize size) throws GeneratorException {
             Random r = new Random();
-            List<String> list = new ArrayList<String>();
+            String[] list = new String[size.getValue()];
             StringBuilder sb = new StringBuilder();
-            for (int ii = 0; ii < count; ii++) {
+            for (int ii = 0; ii < list.length; ii++) {
                 int length = r.nextInt(LONGEST) + 1;
                 for (int jj = 0; jj < length; jj++) {
                     int d = r.nextInt(ALPHABET);
                     sb.append((char) ('a' + d));
                 }
-                list.add(sb.toString());
+                list[ii] = sb.toString();
                 sb.setLength(0);
             }
             return list;
