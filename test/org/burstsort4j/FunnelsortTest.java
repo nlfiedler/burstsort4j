@@ -1,22 +1,8 @@
 /*
- * Copyright (C) 2009-2011  Nathan Fiedler
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * $Id$
+ * Copyright 2009-2011 Nathan Fiedler. All rights reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
  */
-
 package org.burstsort4j;
 
 import java.io.IOException;
@@ -38,25 +24,25 @@ public class FunnelsortTest {
     public void testArguments() {
         Funnelsort.sort((String[]) null);
         Funnelsort.sort(new String[0]);
-        String[] arr = new String[] { "a" };
+        String[] arr = new String[]{"a"};
         Funnelsort.sort(arr);
-        arr = new String[] { "b", "a" };
+        arr = new String[]{"b", "a"};
         Funnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
-        arr = new String[] { "c", "b", "a" };
+        arr = new String[]{"c", "b", "a"};
         Funnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
         assertEquals("c", arr[2]);
-        arr = new String[] { "c", "d", "b", "e", "a" };
+        arr = new String[]{"c", "d", "b", "e", "a"};
         Funnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
         assertEquals("c", arr[2]);
         assertEquals("d", arr[3]);
         assertEquals("e", arr[4]);
-        arr = new String[] { "j", "f", "c", "b", "i", "g", "a", "d", "e", "h" };
+        arr = new String[]{"j", "f", "c", "b", "i", "g", "a", "d", "e", "h"};
         Funnelsort.sort(arr);
         assertEquals("a", arr[0]);
         assertEquals("b", arr[1]);
@@ -157,8 +143,8 @@ public class FunnelsortTest {
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
-        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, STR);
         Funnelsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, STR));
@@ -167,8 +153,8 @@ public class FunnelsortTest {
 //    @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         for (int i = 0, l = 1; i < strs.length; i++, l++) {
             strs[i] = seed.substring(0, l);
         }

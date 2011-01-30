@@ -1,22 +1,8 @@
 /*
- * Copyright (C) 2008-2010  Nathan Fiedler
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * $Id$
+ * Copyright 2008-2011 Nathan Fiedler. All rights reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
  */
-
 package org.burstsort4j;
 
 /**
@@ -31,6 +17,7 @@ package org.burstsort4j;
  * @author Nathan Fiedler
  */
 public class Quicksort {
+
     /** As with GCC std::sort delegate to insertion sort for ranges of
      * size below 16. */
     private static final int THRESHOLD = 16;
@@ -93,8 +80,10 @@ public class Quicksort {
             int i = low;
             int j = high - 1;
             while (true) {
-                while (arr[++i].compareTo(pivot) < 0) { }
-                while (pivot.compareTo(arr[--j]) < 0) { }
+                while (arr[++i].compareTo(pivot) < 0) {
+                }
+                while (pivot.compareTo(arr[--j]) < 0) {
+                }
                 if (i >= j) {
                     break;
                 }

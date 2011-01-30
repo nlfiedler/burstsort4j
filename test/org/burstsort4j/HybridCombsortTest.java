@@ -1,20 +1,8 @@
 /*
- * Copyright (C) 2011  Nathan Fiedler
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2011 Nathan Fiedler. All rights reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
  */
-
 package org.burstsort4j;
 
 import java.io.IOException;
@@ -36,12 +24,12 @@ public class HybridCombsortTest {
     public void testArguments() {
         HybridCombsort.sort((String[]) null);
         HybridCombsort.sort(new String[0]);
-        String[] arr = new String[] { "a" };
+        String[] arr = new String[]{"a"};
         HybridCombsort.sort(arr);
-        arr = new String[] { "b", "a" };
+        arr = new String[]{"b", "a"};
         HybridCombsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
-        arr = new String[] { "c", "b", "a" };
+        arr = new String[]{"c", "b", "a"};
         HybridCombsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
@@ -90,8 +78,8 @@ public class HybridCombsortTest {
     public void testRepeated() {
         // Make the size of the set large enough to burst buckets.
         String[] arr = new String[10000];
-        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         Arrays.fill(arr, STR);
         HybridCombsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, STR));
@@ -100,8 +88,8 @@ public class HybridCombsortTest {
     @Test
     public void testRepeatedCycle() {
         String[] strs = new String[100];
-        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+        String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
         for (int i = 0, l = 1; i < strs.length; i++, l++) {
             strs[i] = seed.substring(0, l);
         }
