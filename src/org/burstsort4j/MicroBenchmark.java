@@ -91,10 +91,11 @@ public class MicroBenchmark {
         };
         SortRunner[] runners = new SortRunner[]{
             new BinaryInsertionsortRunner(),
+            new InsertionsortRunner(),
             new CombsortRunner(),
+            new HybridCombsortRunner(),
             new GnomesortRunner(),
             new HeapsortRunner(),
-            new InsertionsortRunner(),
             new QuicksortRunner(),
             new SelectionsortRunner(),
             new ShellsortRunner()
@@ -557,6 +558,19 @@ public class MicroBenchmark {
         @Override
         public void sort(String[] data) {
             Combsort.sort(data);
+        }
+    }
+
+    private static class HybridCombsortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "HybridComb";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            HybridCombsort.sort(data);
         }
     }
 

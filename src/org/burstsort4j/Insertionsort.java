@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * $Id$
  */
 package org.burstsort4j;
 
@@ -27,6 +25,17 @@ package org.burstsort4j;
 public class Insertionsort {
 
     private Insertionsort() {
+    }
+
+    /**
+     * Sort the array of comparables. Uses a simple insertion sort
+     * algorithm, so expect O(n^2) running time.
+     *
+     * @param  <T>   type of comparable to be sorted.
+     * @param  arr   comparables to be sorted.
+     */
+    public static <T extends Comparable<? super T>> void sort(T[] arr) {
+        sort(arr, 0, arr.length - 1);
     }
 
     /**
