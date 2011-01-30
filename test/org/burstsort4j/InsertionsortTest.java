@@ -39,15 +39,15 @@ public class InsertionsortTest {
 
     @Test
     public void testArguments() {
-        Insertionsort.sort((String[]) null, 0, 0);
-        Insertionsort.sort(new String[0], 0, 0);
+        Insertionsort.sort((String[]) null);
+        Insertionsort.sort(new String[0]);
         String[] arr = new String[] { "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Insertionsort.sort(arr);
         arr = new String[] { "b", "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Insertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
         arr = new String[] { "c", "b", "a" };
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Insertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -57,29 +57,29 @@ public class InsertionsortTest {
             List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            Insertionsort.sort(arr, 0, arr.length - 1);
+            Insertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -87,12 +87,12 @@ public class InsertionsortTest {
         // Test with repeated strings.
         String[] arr = new String[MAX_LINES];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Insertionsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
         List<String> data = Tests.generateData(MAX_LINES, 64);
         arr = data.toArray(new String[data.size()]);
-        Insertionsort.sort(arr, 0, arr.length - 1);
+        Insertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 

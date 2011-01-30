@@ -609,7 +609,7 @@ public class MicroBenchmark {
 
         @Override
         public void sort(String[] data) {
-            Insertionsort.sort(data, 0, data.length - 1);
+            Insertionsort.sort(data);
         }
     }
 
@@ -622,7 +622,7 @@ public class MicroBenchmark {
 
         @Override
         public void sort(String[] data) {
-            BinaryInsertionsort.sort(data, 0, data.length - 1);
+            BinaryInsertionsort.sort(data);
         }
     }
 

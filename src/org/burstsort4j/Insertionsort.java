@@ -35,7 +35,9 @@ public class Insertionsort {
      * @param  arr   comparables to be sorted.
      */
     public static <T extends Comparable<? super T>> void sort(T[] arr) {
-        sort(arr, 0, arr.length - 1);
+        if (arr != null) {
+            sort(arr, 0, arr.length - 1);
+        }
     }
 
     /**

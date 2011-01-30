@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * $Id$
  */
 package org.burstsort4j;
 
@@ -27,6 +25,20 @@ package org.burstsort4j;
 public class BinaryInsertionsort {
 
     private BinaryInsertionsort() {
+    }
+
+    /**
+     * Sorts the specified portion of the array using a binary insertion sort.
+     * This is the best method for sorting small numbers of elements.
+     * It requires O(n log n) compares, but O(n^2) data movement (worst case).
+     *
+     * @param  <T>   type of comparable to be sorted.
+     * @param  arr   the array in which a range is to be sorted.
+     */
+    public static <T extends Comparable<? super T>> void sort(T[] arr) {
+        if (arr != null) {
+            sort(arr, 0, arr.length - 1);
+        }
     }
 
     /**

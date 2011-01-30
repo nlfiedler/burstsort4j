@@ -13,8 +13,6 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * $Id$
  */
 
 package org.burstsort4j;
@@ -39,15 +37,15 @@ public class BinaryInsertionsortTest {
 
     @Test
     public void testArguments() {
-        BinaryInsertionsort.sort((String[]) null, 0, 0);
-        BinaryInsertionsort.sort(new String[0], 0, 0);
+        BinaryInsertionsort.sort((String[]) null);
+        BinaryInsertionsort.sort(new String[0]);
         String[] arr = new String[] { "a" };
-        BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+        BinaryInsertionsort.sort(arr);
         arr = new String[] { "b", "a" };
-        BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+        BinaryInsertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
         arr = new String[] { "c", "b", "a" };
-        BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+        BinaryInsertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
@@ -57,29 +55,29 @@ public class BinaryInsertionsortTest {
             List<String> data = Tests.loadData("dictwords", false, MAX_LINES);
             Collections.shuffle(data);
             String[] arr = data.toArray(new String[data.size()]);
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with non-unique word list.
             data = Tests.loadData("hamletwords", false, MAX_LINES);
             Collections.shuffle(data);
             arr = data.toArray(new String[data.size()]);
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with sorted list
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
             // Test with reverse sorted list
             Collections.reverse(data);
             arr = data.toArray(new String[data.size()]);
-            BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+            BinaryInsertionsort.sort(arr);
             assertTrue(Tests.isSorted(arr));
         } catch (IOException ioe) {
             fail(ioe.toString());
@@ -87,12 +85,12 @@ public class BinaryInsertionsortTest {
         // Test with repeated strings.
         String[] arr = new String[MAX_LINES];
         Arrays.fill(arr, "abcdefghijklmnopqrstuvwxyz");
-        BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+        BinaryInsertionsort.sort(arr);
         assertTrue(Tests.isRepeated(arr, "abcdefghijklmnopqrstuvwxyz"));
         // Test with randomly generated strings.
         List<String> data = Tests.generateData(MAX_LINES, 64);
         arr = data.toArray(new String[data.size()]);
-        BinaryInsertionsort.sort(arr, 0, arr.length - 1);
+        BinaryInsertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
     }
 
