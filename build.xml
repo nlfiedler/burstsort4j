@@ -88,10 +88,14 @@
         <!-- Make the source distributable. -->
         <zip destfile="burstsort4j-src-${version}.zip">
             <zipfileset dir="." prefix="burstsort4j-src-${version}">
+                <exclude name="build/**"/>
+                <exclude name="dist/**"/>
+                <exclude name=".hg/**"/>
+                <exclude name=".hgignore"/>
                 <exclude name="*.zip"/>
                 <exclude name="*.jar"/>
-                <exclude name="**/build.properties"/>
-                <exclude name="**/nbproject/private/**"/>
+                <exclude name="build.properties"/>
+                <exclude name="nbproject/private/**"/>
             </zipfileset>
         </zip>
 
