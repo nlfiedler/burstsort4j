@@ -5,12 +5,15 @@
  */
 package org.burstsort4j;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Runs performance tests over several kinds of data for each of the
@@ -65,9 +68,6 @@ public class MicroBenchmark {
      * @param  args  command-line arguments.
      */
     public static void main(String[] args) {
-// TODO: if --sort argument given, treat as regex to select sorts to measure
-//       e.g. "--sort comb" will run only sorts that have "comb" in the name
-// TODO: if --data argument given, treat as regex to select data set to use
         DataGenerator[] generators = new DataGenerator[]{
             new RepeatGenerator(),
             new RepeatCycleGenerator(),
@@ -87,6 +87,57 @@ public class MicroBenchmark {
             new SelectionsortRunner(),
             new ShellsortRunner()
         };
+
+        if (args.length > 0) {
+            // Parse the command line arguments.
+            int i = 0;
+            while (i < args.length) {
+                if (args[i].equals("--data")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --data argument");
+                    }
+                    Pattern p = Pattern.compile(args[i], Pattern.CASE_INSENSITIVE);
+                    List<DataGenerator> list = new ArrayList<DataGenerator>();
+                    for (DataGenerator generator : generators) {
+                        Matcher m = p.matcher(generator.getDisplayName());
+                        if (m.find()) {
+                            list.add(generator);
+                        }
+                    }
+                    generators = list.toArray(new DataGenerator[list.size()]);
+                } else if (args[i].equals("--sort")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --sort argument");
+                    }
+                    Pattern p = Pattern.compile(args[i], Pattern.CASE_INSENSITIVE);
+                    List<SortRunner> list = new ArrayList<SortRunner>();
+                    for (SortRunner runner : runners) {
+                        Matcher m = p.matcher(runner.getDisplayName());
+                        if (m.find()) {
+                            list.add(runner);
+                        }
+                    }
+                    runners = list.toArray(new SortRunner[list.size()]);
+                } else if (args[i].equals("--list")) {
+                    System.out.println("Data sets");
+                    for (DataGenerator generator : generators) {
+                        System.out.format("\t%s\n", generator.getDisplayName());
+                    }
+                    System.out.println("Sorting algorithms");
+                    for (SortRunner runner : runners) {
+                        System.out.format("\t%s\n", runner.getDisplayName());
+                    }
+                    System.exit(0);
+                } else if (args[i].equals("--help")) {
+                    usage();
+                } else {
+                    usage("Unrecognized option: " + args[i]);
+                }
+                i++;
+            }
+        }
 
         // Generate the data sets once and reuse hereafter.
         Map<DataGenerator, String[]> dataSets = new HashMap<DataGenerator, String[]>();
@@ -143,6 +194,33 @@ public class MicroBenchmark {
                 }
             }
         }
+    }
+
+    /**
+     * Display an error message and the usage information.
+     */
+    private static void usage(String msg) {
+        System.out.println(msg);
+        usage();
+    }
+
+    /**
+     * Display the usage information.
+     */
+    private static void usage() {
+        System.out.println("Usage: MicroBenchmark [options]");
+        System.out.println("\t--data <regex>");
+        System.out.println("\t\tSelect the data set whose name matches the regular expression.");
+        System.out.println("\t\tFor example, '--data random' would use only the random data set.");
+        System.out.println("\t--help");
+        System.out.println("\t\tDisplay this usage information.");
+        System.out.println("\t--list");
+        System.out.println("\t\tDisplay a list of the supported data sets and sorting algorithms.");
+        System.out.println("\t--sort <regex>");
+        System.out.println("\t\tSelect the sort algorithms whose name matches the regular");
+        System.out.println("\t\texpression. For example, '--sort (comb|insert)' would run");
+        System.out.println("\t\tboth versions of the insertion and comb sort algorithms.");
+        System.exit(0);
     }
 
     /**
@@ -343,7 +421,7 @@ public class MicroBenchmark {
 
         @Override
         public String getDisplayName() {
-            return "Pseudo words";
+            return "Pseudo words FL28 C26";
         }
     }
 
@@ -376,7 +454,7 @@ public class MicroBenchmark {
 
         @Override
         public String getDisplayName() {
-            return "Random";
+            return "Random FL100 C95";
         }
     }
 
@@ -466,7 +544,7 @@ public class MicroBenchmark {
 
         @Override
         public String getDisplayName() {
-            return "Small Alphabet";
+            return "Small Alphabet FL100 C9";
         }
     }
 
@@ -511,7 +589,7 @@ public class MicroBenchmark {
 
         @Override
         public String getDisplayName() {
-            return "Genome";
+            return "Genome FL9 C4";
         }
     }
 

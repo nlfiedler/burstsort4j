@@ -9,10 +9,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Runs performance tests over several kinds of data for each of the
@@ -65,171 +68,122 @@ public class Benchmark {
      * @param  args  command-line arguments.
      */
     public static void main(String[] args) {
-        DataGenerator[] generators = null;
+        DataGenerator[] generators = new DataGenerator[]{
+            new RandomGenerator(),
+            new PseudoWordGenerator(),
+            new RepeatGenerator(),
+            new SmallAlphabetGenerator(),
+            new RepeatCycleGenerator(),
+            new GenomeGenerator()
+        };
         SortRunner[] runners = null;
-        DataSize[] sizes = null;
-        if (args.length == 0) {
-            // With no arguments, run the random data generators and all
-            // of the data sizes.
-            generators = new DataGenerator[]{
-                        new RandomGenerator(),
-                        new PseudoWordGenerator(),
-                        new RepeatGenerator(),
-                        new SmallAlphabetGenerator(),
-                        new RepeatCycleGenerator(),
-                        new GenomeGenerator()
+        if (Runtime.getRuntime().availableProcessors() > 1) {
+            runners = new SortRunner[]{
+                        new MergesortRunner(),
+                        new QuicksortRunner(),
+                        new MultikeyRunner(),
+                        new BurstsortRunner(),
+                        new BurstsortThreadPoolRunner(),
+                        new RedesignedBurstsortRunner(),
+                        new RedesignedBurstsortThreadPoolRunner(),
+                        new LazyFunnelsortRunner(),
+                        new ThreadedLazyFunnelsortRunner()
                     };
-            if (Runtime.getRuntime().availableProcessors() > 1) {
-                runners = new SortRunner[]{
-                            new MergesortRunner(),
-                            new QuicksortRunner(),
-                            new MultikeyRunner(),
-                            new BurstsortRunner(),
-                            new BurstsortThreadPoolRunner(),
-                            new RedesignedBurstsortRunner(),
-                            new RedesignedBurstsortThreadPoolRunner(),
-                            new LazyFunnelsortRunner(),
-                            new ThreadedLazyFunnelsortRunner()
-                        };
-            } else {
-                runners = new SortRunner[]{
-                            new MergesortRunner(),
-                            new QuicksortRunner(),
-                            new MultikeyRunner(),
-                            new BurstsortRunner(),
-                            new RedesignedBurstsortRunner(),
-                            new LazyFunnelsortRunner()
-                        };
-            }
-            sizes = DataSize.values();
-        } else if (args.length == 1) {
-// TODO: if --sort argument given, treat as regex to select sorts to measure
-//       e.g. "--sort comb" will run only sorts that have "comb" in the name
-//       special case: --sort comparable will use all the Comparable based sorts
-// TODO: if --data argument given, treat as regex to select data set to use
-            if (args[0].equals("--burstsort")) {
-                generators = new DataGenerator[]{
-                            new RandomGenerator(),
-                            new PseudoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                        };
-                sizes = DataSize.values();
-                if (Runtime.getRuntime().availableProcessors() > 1) {
+        } else {
+            runners = new SortRunner[]{
+                        new MergesortRunner(),
+                        new QuicksortRunner(),
+                        new MultikeyRunner(),
+                        new BurstsortRunner(),
+                        new RedesignedBurstsortRunner(),
+                        new LazyFunnelsortRunner()
+                    };
+        }
+        DataSize[] sizes = DataSize.values();
+        if (args.length > 0) {
+            // Parse the command line arguments.
+            int i = 0;
+            while (i < args.length) {
+                if (args[i].equals("--comparable")) {
+                    // Benchmark the Comparable-based sorters (i.e. those that
+                    // sort instances of Comparable, without any assumptions
+                    // about the input, such as String-based sorters).
                     runners = new SortRunner[]{
-                                new BurstsortRunner(),
-                                new BurstsortThreadPoolRunner(),
-                                new RedesignedBurstsortRunner(),
-                                new RedesignedBurstsortThreadPoolRunner()
-                            };
-                } else {
-                    runners = new SortRunner[]{
-                                new BurstsortRunner(),
-                                new RedesignedBurstsortRunner()
-                            };
-                }
-            } else if (args[0].equals("--funnelsort")) {
-                generators = new DataGenerator[]{
-                            new RandomGenerator(),
-                            new PseudoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                        };
-                sizes = DataSize.values();
-                if (Runtime.getRuntime().availableProcessors() > 1) {
-                    runners = new SortRunner[]{
-                                new LazyFunnelsortRunner(),
-                                new ThreadedLazyFunnelsortRunner()
-                            };
-                } else {
-                    runners = new SortRunner[]{
+                                new MergesortRunner(),
+                                new QuicksortRunner(),
                                 new LazyFunnelsortRunner()
                             };
+                } else if (args[i].equals("--data")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --data argument");
+                    }
+                    Pattern p = Pattern.compile(args[i], Pattern.CASE_INSENSITIVE);
+                    List<DataGenerator> list = new ArrayList<DataGenerator>();
+                    for (DataGenerator generator : generators) {
+                        Matcher m = p.matcher(generator.getDisplayName());
+                        if (m.find()) {
+                            list.add(generator);
+                        }
+                    }
+                    generators = list.toArray(new DataGenerator[list.size()]);
+                } else if (args[i].equals("--sort")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --sort argument");
+                    }
+                    Pattern p = Pattern.compile(args[i], Pattern.CASE_INSENSITIVE);
+                    List<SortRunner> list = new ArrayList<SortRunner>();
+                    for (SortRunner runner : runners) {
+                        Matcher m = p.matcher(runner.getDisplayName());
+                        if (m.find()) {
+                            list.add(runner);
+                        }
+                    }
+                    runners = list.toArray(new SortRunner[list.size()]);
+                } else if (args[i].equals("--list")) {
+                    System.out.println("Data sets");
+                    for (DataGenerator generator : generators) {
+                        System.out.format("\t%s\n", generator.getDisplayName());
+                    }
+                    System.out.println("Sorting algorithms");
+                    for (SortRunner runner : runners) {
+                        System.out.format("\t%s\n", runner.getDisplayName());
+                    }
+                    System.exit(0);
+                } else if (args[i].equals("--size")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --size argument");
+                    }
+                    if (args[i].equals("small")) {
+                        sizes = new DataSize[]{DataSize.SMALL};
+                    } else if (args[i].equals("medium")) {
+                        sizes = new DataSize[]{DataSize.MEDIUM};
+                    } else if (args[i].equals("large")) {
+                        sizes = new DataSize[]{DataSize.LARGE};
+                    } else {
+                        usage("Unrecognized --size argument");
+                    }
+                } else if (args[i].equals("--file")) {
+                    i++;
+                    if (i >= args.length) {
+                        usage("Missing --file argument");
+                    }
+                    File file = new File(args[i]);
+                    if (!file.exists()) {
+                        usage("File not found: " + args[i]);
+                    }
+                    generators = new DataGenerator[]{
+                                new FileGenerator(file)
+                            };
+                } else if (args[i].equals("--help")) {
+                    usage();
+                } else {
+                    usage("Unrecognized option: " + args[i]);
                 }
-            } else if (args[0].equals("--mqsort")) {
-                generators = new DataGenerator[]{
-                            new RandomGenerator(),
-                            new PseudoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                        };
-                sizes = DataSize.values();
-                runners = new SortRunner[]{
-                            new MultikeyRunner()
-                        };
-            } else if (args[0].equals("--comparable")) {
-                // Benchmark the Comparable-based sorters (i.e. those that
-                // sort instances of Comparable, without any assumptions
-                // about the input, such as String-based sorters).
-                generators = new DataGenerator[]{
-                            new RandomGenerator(),
-                            new PseudoWordGenerator(),
-                            new RepeatGenerator(),
-                            new SmallAlphabetGenerator(),
-                            new RepeatCycleGenerator(),
-                            new GenomeGenerator()
-                        };
-                sizes = DataSize.values();
-                runners = new SortRunner[]{
-                            new MergesortRunner(),
-                            new QuicksortRunner(),
-                            new LazyFunnelsortRunner()
-                        };
-            } else {
-                usage();
-                System.exit(1);
+                i++;
             }
-        } else if (args.length == 2) {
-            // Must provide size argument followed by file name.
-            String size = args[0];
-            if (size.equals("--3")) {
-                sizes = DataSize.values();
-            } else if (size.equals("--2")) {
-                sizes = new DataSize[]{DataSize.SMALL, DataSize.MEDIUM};
-            } else if (size.equals("--1")) {
-                sizes = new DataSize[]{DataSize.SMALL};
-            } else {
-                System.err.println("First argument must be size (--1, --2, or --3)");
-                System.exit(1);
-            }
-            File file = new File(args[1]);
-            if (!file.exists()) {
-                System.err.format("File '%s' not found!\n", args[1]);
-                System.exit(1);
-            }
-            generators = new DataGenerator[]{
-                        new FileGenerator(file)
-                    };
-            if (Runtime.getRuntime().availableProcessors() > 1) {
-                runners = new SortRunner[]{
-                            new MergesortRunner(),
-                            new QuicksortRunner(),
-                            new MultikeyRunner(),
-                            new BurstsortRunner(),
-                            new BurstsortThreadPoolRunner(),
-                            new RedesignedBurstsortRunner(),
-                            new RedesignedBurstsortThreadPoolRunner(),
-                            new LazyFunnelsortRunner(),
-                            new ThreadedLazyFunnelsortRunner()
-                        };
-            } else {
-                runners = new SortRunner[]{
-                            new MergesortRunner(),
-                            new QuicksortRunner(),
-                            new MultikeyRunner(),
-                            new BurstsortRunner(),
-                            new RedesignedBurstsortRunner(),
-                            new LazyFunnelsortRunner(),};
-            }
-        } else {
-            usage();
-            System.exit(1);
         }
         try {
             runsorts(generators, runners, sizes);
@@ -239,20 +193,42 @@ public class Benchmark {
     }
 
     /**
+     * Display an error message and the usage information.
+     */
+    private static void usage(String msg) {
+        System.out.println(msg);
+        usage();
+    }
+
+    /**
      * Display a usage message.
      */
     private static void usage() {
-        System.out.println("Usage: Benchmark [<options>]|[--1|--2|--3 <file>]");
-        System.out.println("\t--burstsort: run only the burstsort tests, with the multi-threaded");
-        System.out.println("\t             versions if multiple CPU cores are present.");
-        System.out.println("\t--funnelsort: run only the funnelsort tests");
-        System.out.println("\t--mqsort: run only the multikey quicksort tests");
-        System.out.println("\t--comparable: run the tests for Comparable sorters");
-        System.out.println("\t--1: load 333k lines from file and benchmark.");
-        System.out.println("\t--2: load 1m lines from file and benchmark.");
-        System.out.println("\t--3: load 3m lines from file and benchmark.");
-        System.out.println("\t\tFor the file benchmarks, all tests are run.");
-        System.out.println("\n\tWith no arguments, generates random data and runs all tests.");
+        System.out.println("Usage: Benchmark [options]");
+        System.out.println("\t--comparable");
+        System.out.println("\t\tRun only the sorts that operate on Comparable.");
+        System.out.println("\t\tNot compatible with the --sort option.");
+        System.out.println("\t--data <regex>");
+        System.out.println("\t\tSelect the data set whose name matches the regular expression.");
+        System.out.println("\t\tFor example, '--data random' would use only the random data set.");
+        System.out.println("\t\tNot compatible with the --file option.");
+        System.out.println("\t--file <file>");
+        System.out.println("\t\tUse the contents of the named file for sorting.");
+        System.out.println("\t\tNot compatible with the --data option.");
+        System.out.println("\t--help");
+        System.out.println("\t\tDisplay this usage information.");
+        System.out.println("\t--list");
+        System.out.println("\t\tDisplay a list of the supported data sets and sorting algorithms.");
+        System.out.println("\t--size <size>");
+        System.out.println("\t\tIf given 'small', uses 333,000 inputs from data set.");
+        System.out.println("\t\tIf given 'medium', uses 1,000,000 inputs from data set.");
+        System.out.println("\t\tIf given 'large', uses 3,000,000 inputs from data set.");
+        System.out.println("\t--sort <regex>");
+        System.out.println("\t\tSelect the sort algorithms whose name matches the regular");
+        System.out.println("\t\texpression. For example, '--sort (comb|insert)' would run");
+        System.out.println("\t\tboth versions of the insertion and comb sort algorithms.");
+        System.out.println("\t\tNot compatible with the --comparable option.");
+        System.exit(0);
     }
 
     /**
@@ -462,7 +438,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Genome";
+            return "Genome FL9 C4";
         }
     }
 
@@ -497,7 +473,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Pseudo words";
+            return "Pseudo words FL28 C26";
         }
     }
 
@@ -530,7 +506,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Random";
+            return "Random FL100 C95";
         }
     }
 
@@ -620,7 +596,7 @@ public class Benchmark {
 
         @Override
         public String getDisplayName() {
-            return "Artificial B";
+            return "Small Alphabet FL100 C9";
         }
     }
 
