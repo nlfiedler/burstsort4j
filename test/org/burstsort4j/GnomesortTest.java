@@ -128,7 +128,7 @@ public class GnomesortTest {
         }
     }
 
-    // @Test -- XXX fails to finish or simply takes too long
+    @Test
     public void testDictCalls() {
         try {
             List<String> data = Tests.loadData("dictcalls.gz", true, MAX_LINES);
