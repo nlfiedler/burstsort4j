@@ -11,7 +11,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,17 +21,20 @@ import java.util.List;
 public class Main {
 
     private static final String BURSTSORT = "--burstsort";
-    private static final String MERGESORT = "--mergesort";
-    private static final String QUICKSORT = "--quicksort";
+    private static final String FUNNELSORT = "--funnelsort";
     private static final String MULTIKEY = "--multikey";
-    private static final String SHUFFLE = "--shuffle";
-    /** String data to be sorted. */
-    private List<String> data;
 
+    private Main() {
+    }
+
+    /**
+     * Main entry point for the sorter.
+     *
+     * @param  args  command line arguments.
+     */
     public static void main(String[] args) {
         if (args.length < 2 || args.length > 3) {
-            printUsage();
-            System.exit(1);
+            usage();
         }
         String input = null;
         String output = null;
@@ -46,100 +48,59 @@ public class Main {
             input = args[0];
             output = args[1];
         }
-        Main main = new Main();
+
         // Read in the input file.
         long r1 = System.currentTimeMillis();
-        main.readFile(input);
+        String[] data = readFile(input);
         long r2 = System.currentTimeMillis();
         System.out.format("Read time: %dms\n", r2 - r1);
 
-        if (sort.equals(MERGESORT)) {
-            main.mergesort();
+        // Sort the data using the selected sort.
+        long s1 = System.currentTimeMillis();
+        if (sort.equals(FUNNELSORT)) {
+            LazyFunnelsort.sort(data);
         } else if (sort.equals(BURSTSORT)) {
-            main.burstsort();
-        } else if (sort.equals(QUICKSORT)) {
-            main.quicksort();
+            Burstsort.sort(data);
         } else if (sort.equals(MULTIKEY)) {
-            main.multikey();
-        } else if (sort.equals(SHUFFLE)) {
-            main.shuffle();
+            MultikeyQuicksort.sort(data);
         } else {
-            System.err.println("Unrecognized sort option!");
-            printUsage();
-            System.exit(1);
+            usage();
         }
+        long s2 = System.currentTimeMillis();
+        System.out.format("Sort time: %dms\n", s2 - s1);
 
         // Write the results to the output file.
         long w1 = System.currentTimeMillis();
-        main.writeFile(output);
+        writeFile(output, data);
         long w2 = System.currentTimeMillis();
         System.out.format("Write time: %dms\n", w2 - w1);
     }
 
-    private static void printUsage() {
-        System.out.format("Usage: java Main [%s|%s|%s|%s|%s] <input> <output>\n",
-                BURSTSORT, MERGESORT, QUICKSORT, MULTIKEY, SHUFFLE);
-        System.out.println("\tWithout a specified sort, default is burstsort.");
-        System.out.println("\t--shuffle will in fact randomly shuffle the input file.");
+    /**
+     * Display usage information and exit.
+     */
+    private static void usage() {
+        System.out.println("Usage: Main [options] <input> <output>\n");
         System.out.println("\t<input> is the name of the (unsorted) input file.");
-        System.out.println("\t<output> is the name for the (sorted) output file.");
-        System.out.println("\t(Note: all sort/shuffle actions are line-oriented.)");
+        System.out.println("\t<output> is the name for the (sorted) output file.\n");
+        System.out.println("\t--burstsort");
+        System.out.println("\t\tSort using the original Burstsort algorithm.");
+        System.out.println("\t\tThis is the default sort if none is specified.\n");
+        System.out.println("\t--funnelsort");
+        System.out.println("\t\tSort using the Lazy Funnelsort algorithm.\n");
+        System.out.println("\t--multikey");
+        System.out.println("\t\tSort using the Multikey Quicksort algorithm.");
+        System.exit(0);
     }
 
-    private void mergesort() {
-        long s1 = System.currentTimeMillis();
-        Collections.sort(data);
-        long s2 = System.currentTimeMillis();
-        System.out.format("Sort time: %dms\n", s2 - s1);
-    }
-
-    private void multikey() {
-        String[] arr = data.toArray(new String[data.size()]);
-        long s1 = System.currentTimeMillis();
-        // The median-of-three multikey quicksort is typically faster
-        // than the standard version.
-        MultikeyQuicksort.sort(arr);
-        long s2 = System.currentTimeMillis();
-        System.out.format("Sort time: %dms\n", s2 - s1);
-        data.clear();
-        for (String a : arr) {
-            data.add(a);
-        }
-    }
-
-    private void burstsort() {
-        String[] arr = data.toArray(new String[data.size()]);
-        long s1 = System.currentTimeMillis();
-        Burstsort.sort(arr);
-        long s2 = System.currentTimeMillis();
-        System.out.format("Sort time: %dms\n", s2 - s1);
-        data.clear();
-        for (String a : arr) {
-            data.add(a);
-        }
-    }
-
-    private void quicksort() {
-        String[] arr = data.toArray(new String[data.size()]);
-        long s1 = System.currentTimeMillis();
-        Quicksort.sort(arr);
-        long s2 = System.currentTimeMillis();
-        System.out.format("Sort time: %dms\n", s2 - s1);
-        data.clear();
-        for (String a : arr) {
-            data.add(a);
-        }
-    }
-
-    private void shuffle() {
-        long s1 = System.currentTimeMillis();
-        Collections.shuffle(data);
-        long s2 = System.currentTimeMillis();
-        System.out.format("Shuffle time: %dms\n", s2 - s1);
-    }
-
-    private void readFile(String name) {
-        data = new ArrayList<String>();
+    /**
+     * Reads the contents of the named file into an array of strings.
+     *
+     * @param  name  file to be read.
+     * @return  the lines of text from the file.
+     */
+    private static String[] readFile(String name) {
+        List<String> data = new ArrayList<String>();
         try {
             FileReader fr = new FileReader(name);
             BufferedReader br = new BufferedReader(fr);
@@ -152,9 +113,16 @@ public class Main {
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+        return data.toArray(new String[data.size()]);
     }
 
-    private void writeFile(String name) {
+    /**
+     * Write the given array of strings to the named file.
+     *
+     * @param  name  file name to write to.
+     * @param  data  the strings to be written.
+     */
+    private static void writeFile(String name, String[] data) {
         try {
             FileWriter fw = new FileWriter(name);
             BufferedWriter bw = new BufferedWriter(fw);
