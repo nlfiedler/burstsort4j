@@ -98,18 +98,5 @@
                 <exclude name="nbproject/private/**"/>
             </zipfileset>
         </zip>
-
-        <!-- Calculate the file checksums. -->
-        <antcall target="checksum">
-            <param name="file" value="burstsort4j-${version}.jar"/>
-        </antcall>
-        <antcall target="checksum">
-            <param name="file" value="burstsort4j-src-${version}.zip"/>
-        </antcall>
-    </target>
-
-    <target name="checksum">
-        <checksum file="${file}" algorithm="SHA" property="sum"/>
-        <echo level="info">${sum}  ${file}</echo>
     </target>
 </project>
