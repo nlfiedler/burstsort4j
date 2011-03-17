@@ -53,7 +53,7 @@ public class Burstsort {
      * @param  d  offset.
      * @return  character in s at d, or zero.
      */
-    private static final char charAt(CharSequence s, int d) {
+    private static char charAt(CharSequence s, int d) {
         return d < s.length() ? s.charAt(d) : NULLTERM;
     }
 
@@ -190,7 +190,9 @@ public class Burstsort {
                         // Copy the string tails to the sorted array.
                         int j = 0;
                         while (j < no_elements_in_bucket) {
-                            strings[off++] = (CharSequence) nullbucket[j++];
+                            strings[off] = (CharSequence) nullbucket[j];
+                            off++;
+                            j++;
                         }
                         nullbucket = (Object[]) nullbucket[j];
                     }
@@ -403,12 +405,14 @@ public class Burstsort {
                 } else {
                     // Insert string in bucket and increment the item counter.
                     CharSequence[] cs = (CharSequence[]) ptrs[c];
-                    cs[counts[c]++] = s;
+                    cs[counts[c]] = s;
+                    counts[c]++;
                     // If the bucket is full, increase its size, but only
                     // up to the threshold value.
                     if (counts[c] < THRESHOLD && counts[c] == cs.length) {
-                        ptrs[c] = new CharSequence[cs.length * BUCKET_GROWTH_FACTOR];
-                        System.arraycopy(cs, 0, ptrs[c], 0, cs.length);
+                        CharSequence[] tmp = new CharSequence[cs.length * BUCKET_GROWTH_FACTOR];
+                        System.arraycopy(cs, 0, tmp, 0, cs.length);
+                        ptrs[c] = tmp;
                     }
                 }
             }
@@ -481,7 +485,7 @@ public class Burstsort {
          * @param  offset  offset within output array to which sorted
          *                 strings will be written.
          */
-        public CopyJob(Object[] input, int count, CharSequence[] output, int offset) {
+        CopyJob(Object[] input, int count, CharSequence[] output, int offset) {
             this.input = input;
             this.count = count;
             this.output = output;
@@ -541,7 +545,7 @@ public class Burstsort {
          * @param  depth   number of charaters in strings to be ignored
          *                 when sorting (i.e. the common prefix).
          */
-        public SortJob(CharSequence[] input, int count, CharSequence[] output,
+        SortJob(CharSequence[] input, int count, CharSequence[] output,
                 int offset, int depth) {
             this.input = input;
             this.count = count;

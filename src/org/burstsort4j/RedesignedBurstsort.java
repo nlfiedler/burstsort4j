@@ -59,7 +59,7 @@ public class RedesignedBurstsort {
      * @param  d  offset.
      * @return  character in s at d, or zero.
      */
-    private static final char charAt(CharSequence s, int d) {
+    private static char charAt(CharSequence s, int d) {
         return d < s.length() ? s.charAt(d) : NULLTERM;
     }
 
@@ -516,7 +516,7 @@ public class RedesignedBurstsort {
          *                 when sorting (i.e. the common prefix), or -1
          *                 if no sorting is to be performed.
          */
-        public CopySortJob(Object[] bind, int bstart, int bend, int count,
+        CopySortJob(Object[] bind, int bstart, int bend, int count,
                 CharSequence[] output, int offset, int depth) {
             this.bind = bind;
             this.bstart = bstart;
