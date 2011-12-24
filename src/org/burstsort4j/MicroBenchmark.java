@@ -8,7 +8,6 @@ package org.burstsort4j;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -26,12 +25,16 @@ public class MicroBenchmark {
     /** Number of nanoseconds in one second. */
     private static final int ONE_BILLION = 1000000000;
 
-    /** Size of the data sets used in testing sort performance. */
+    /**
+     * Size of the data sets used in testing sort performance.
+     * For the median-of-three killer generator to work, the
+     * sizes must be divisible by four.
+     */
     private static enum DataSize {
 
-        N_10(10),
+        N_12(12),
         N_20(20),
-        N_50(50),
+        N_52(52),
         N_100(100),
         N_400(400);
         /** The quantity for this data size. */
@@ -74,7 +77,8 @@ public class MicroBenchmark {
             new RandomGenerator(),
             new PseudoWordGenerator(),
             new SmallAlphabetGenerator(),
-            new GenomeGenerator()
+            new GenomeGenerator(),
+            new MedianOf3KillerGenerator()
         };
         SortRunner[] runners = new SortRunner[]{
             new BinaryInsertionsortRunner(),
@@ -83,6 +87,7 @@ public class MicroBenchmark {
             new HybridCombsortRunner(),
             new GnomesortRunner(),
             new HeapsortRunner(),
+            new IntrosortRunner(),
             new QuicksortRunner(),
             new SelectionsortRunner(),
             new ShellsortRunner()
@@ -139,16 +144,10 @@ public class MicroBenchmark {
             }
         }
 
-        // Generate the data sets once and reuse hereafter.
-        Map<DataGenerator, String[]> dataSets = new HashMap<DataGenerator, String[]>();
-        for (DataGenerator generator : generators) {
-            dataSets.put(generator, generator.generate(DataSize.N_400));
-        }
-
         // Warm up the JVM so that the code (hopefully) gets compiled.
         System.out.println("Warming up the system, please wait...");
         for (DataGenerator generator : generators) {
-            String[] dataSet = dataSets.get(generator);
+            String[] dataSet = generator.generate(DataSize.N_400);
             String[] input = new String[dataSet.length];
             for (SortRunner runner : runners) {
                 for (int i = 0; i < 1000; i++) {
@@ -169,8 +168,10 @@ public class MicroBenchmark {
         // calculate an average.
         for (DataGenerator generator : generators) {
             System.out.format("%s...\n", generator.getDisplayName());
-            final String[] dataSet = dataSets.get(generator);
             for (DataSize size : DataSize.values()) {
+                // Must generate the data for each size since some
+                // generators use it to form a pattern.
+                final String[] dataSet = generator.generate(size);
                 System.out.format("\t%s...\n", size.toString());
                 final String[] input = inputSets.get(size);
                 for (final SortRunner runner : runners) {
@@ -489,7 +490,7 @@ public class MicroBenchmark {
 
         @Override
         public String[] generate(DataSize size) {
-            String[] strs = new String[100];
+            String[] strs = new String[Math.max(size.getValue() / 4, 100)];
             String seed = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
             for (int i = 0; i < strs.length; i++) {
@@ -594,6 +595,44 @@ public class MicroBenchmark {
     }
 
     /**
+     * Generates a data set that would normally cause worst-case behavior
+     * for a sorting algorithm such as quicksort, otherwise known as a
+     * "median of 3 killer".
+     */
+    private static class MedianOf3KillerGenerator implements DataGenerator {
+
+        /** Generator used to generate initial data set. */
+        private RandomGenerator random = new RandomGenerator();
+
+        @Override
+        public String[] generate(DataSize size) {
+            if (((size.getValue() / 2) % 2) == 1) {
+                throw new IllegalArgumentException(
+                        "cannot generate median-of-3 killer with given size");
+            }
+            // Generate a random data set and then sort it so we can
+            // pluck values from it to generate our killer data set.
+            String[] data = random.generate(size);
+            Quicksort.sort(data);
+            final int k = data.length / 2;
+            String[] list = new String[data.length];
+            for (int ii = 1; ii <= k; ii++) {
+                if ((ii % 2) == 1) {
+                    list[ii - 1] = data[ii - 1];
+                    list[ii] = data[k + ii - 1];
+                }
+                list[k + ii - 1] = data[2 * ii - 1];
+            }
+            return list;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Median3Killer";
+        }
+    }
+
+    /**
      * Runs a particular sort implementation.
      */
     private static interface SortRunner {
@@ -688,6 +727,19 @@ public class MicroBenchmark {
         @Override
         public void sort(String[] data) {
             BinaryInsertionsort.sort(data);
+        }
+    }
+
+    private static class IntrosortRunner implements SortRunner {
+
+        @Override
+        public String getDisplayName() {
+            return "Introsort";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            Introsort.sort(data);
         }
     }
 

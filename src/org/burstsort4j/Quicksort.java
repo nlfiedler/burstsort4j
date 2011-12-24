@@ -55,7 +55,7 @@ public class Quicksort {
     public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         if (low + THRESHOLD > high) {
             // Insertion sort for small partitions.
-            BinaryInsertionsort.sort(arr, low, high);
+            Insertionsort.sort(arr, low, high);
         } else {
             // Choose a partition element
             int middle = (low + high) / 2;

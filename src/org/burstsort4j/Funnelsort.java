@@ -82,7 +82,7 @@ public class Funnelsort {
             output.drain(strings, offset);
         } else {
             // For small subarrays, delegate to insertion sort.
-            BinaryInsertionsort.sort(strings, offset, offset + count - 1);
+            Insertionsort.sort(strings, offset, offset + count - 1);
         }
     }
 

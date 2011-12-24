@@ -127,7 +127,7 @@ public class MultikeyQuicksort {
      */
     private static void ssort(CharSequence[] a, int base, int n, int depth) {
         if (n < THRESHOLD) {
-            BinaryInsertionsort.sort(a, base, base + n, depth);
+            Insertionsort.sort(a, base, base + n, depth);
             return;
         }
         int pl = base;
