@@ -69,10 +69,47 @@ public class Introsort {
             int low, int high, int depth_limit, T[] arr) {
         while (high - low > THRESHOLD) {
             if (depth_limit == 0) {
-                heapsort(low, high, arr);
+                // perform a basic heap sort
+                int n = high - low;
+                for (int i = n / 2; i >= 1; i--) {
+                    T d = arr[low + i - 1];
+                    int j = i;
+                    while (j <= n / 2) {
+                        int child = 2 * j;
+                        if (child < n && arr[low + child - 1].compareTo(arr[low + child]) < 0) {
+                            child++;
+                        }
+                        if (d.compareTo(arr[low + child - 1]) >= 0) {
+                            break;
+                        }
+                        arr[low + j - 1] = arr[low + child - 1];
+                        j = child;
+                    }
+                    arr[low + j - 1] = d;
+                }
+                for (int i = n; i > 1; i--) {
+                    T t = arr[low];
+                    arr[low] = arr[low + i - 1];
+                    arr[low + i - 1] = t;
+                    T d = arr[low + i - 1];
+                    int j = 1;
+                    int m = i - 1;
+                    while (j <= m / 2) {
+                        int child = 2 * j;
+                        if (child < m && arr[low + child - 1].compareTo(arr[low + child]) < 0) {
+                            child++;
+                        }
+                        if (d.compareTo(arr[low + child - 1]) >= 0) {
+                            break;
+                        }
+                        arr[low + j - 1] = arr[low + child - 1];
+                        j = child;
+                    }
+                    arr[low + j - 1] = d;
+                }
                 return;
             }
-            depth_limit -= 1;
+            depth_limit--;
             int p = partition(low, high, medianOf3(low, low + ((high - low) / 2) + 1, high - 1, arr), arr);
             introsort_loop(p, high, depth_limit, arr);
             high = p;
@@ -97,9 +134,9 @@ public class Introsort {
             while (arr[i].compareTo(x) < 0) {
                 i++;
             }
-            j -= 1;
-            while (arr[j].compareTo(x) > 0) {
-                j -= 1;
+            j--;
+            while (x.compareTo(arr[j]) < 0) {
+                j--;
             }
             if (i >= j) {
                 return i;
@@ -143,52 +180,6 @@ public class Introsort {
                 return arr[mid];
             }
         }
-    }
-
-    /**
-     * A heapsort implementation that operates on the given range of elements.
-     *
-     * @param  <T>   type of comparable to be sorted.
-     * @param  low   low end of range to sort (inclusive).
-     * @param  high  high end of range to sort (inclusive).
-     * @param  arr   comparables to be sorted.
-     */
-    private static <T extends Comparable<? super T>> void heapsort(int low, int high, T[] arr) {
-        int n = high - low;
-        for (int i = n / 2; i >= 1; i -= 1) {
-            downheap(i, n, low, arr);
-        }
-        for (int i = n; i > 1; i -= 1) {
-            T t = arr[low];
-            arr[low] = arr[low + i - 1];
-            arr[low + i - 1] = t;
-            downheap(1, i - 1, low, arr);
-        }
-    }
-
-    /**
-     * Heapify the given range of the array.
-     *
-     * @param  <T>   type of comparable to be sorted.
-     * @param  i     element to be positioned in the heap.
-     * @param  n     upper bound range to heapify.
-     * @param  low   low end of range to heapify (inclusive).
-     * @param  arr   comparables to be sorted.
-     */
-    private static <T extends Comparable<? super T>> void downheap(int i, int n, int low, T[] arr) {
-        T d = arr[low + i - 1];
-        while (i <= n / 2) {
-            int child = 2 * i;
-            if (child < n && arr[low + child - 1].compareTo(arr[low + child]) < 0) {
-                child++;
-            }
-            if (d.compareTo(arr[low + child - 1]) > 0) {
-                break;
-            }
-            arr[low + i - 1] = arr[low + child - 1];
-            i = child;
-        }
-        arr[low + i - 1] = d;
     }
 
     /**
