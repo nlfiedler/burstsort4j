@@ -31,7 +31,7 @@ public class Introsort {
     public static <T extends Comparable<? super T>> void sort(T[] arr) {
         if (arr != null && arr.length > 1) {
             int floor = (int) (Math.floor(Math.log(arr.length) / Math.log(2)));
-            introsort_loop(0, arr.length, 2 * floor, arr);
+            innerLoop(0, arr.length, 2 * floor, arr);
             insertionsort(0, arr.length, arr);
         }
     }
@@ -49,7 +49,7 @@ public class Introsort {
     public static <T extends Comparable<? super T>> void sort(T[] arr, int low, int high) {
         if (arr != null && arr.length > 1 && low >= 0 && low < high) {
             int floor = (int) (Math.floor(Math.log(high - low) / Math.log(2)));
-            introsort_loop(low, high, 2 * floor, arr);
+            innerLoop(low, high, 2 * floor, arr);
             insertionsort(low, high, arr);
         }
     }
@@ -65,7 +65,7 @@ public class Introsort {
      * @param  high         high end of range to sort (inclusive).
      * @param  depth_limit  if zero, will delegate to heapsort.
      */
-    private static <T extends Comparable<? super T>> void introsort_loop(
+    private static <T extends Comparable<? super T>> void innerLoop(
             int low, int high, int depth_limit, T[] arr) {
         while (high - low > THRESHOLD) {
             if (depth_limit == 0) {
@@ -111,7 +111,7 @@ public class Introsort {
             }
             depth_limit--;
             int p = partition(low, high, medianOf3(low, low + ((high - low) / 2) + 1, high - 1, arr), arr);
-            introsort_loop(p, high, depth_limit, arr);
+            innerLoop(p, high, depth_limit, arr);
             high = p;
         }
     }
@@ -119,7 +119,7 @@ public class Introsort {
     /**
      * Partitions the elements in the given range such that elements
      * less than the pivot appear before those greater than the pivot.
-     * 
+     *
      * @param  <T>   type of comparable to be sorted.
      * @param  low   low end of range to sort (inclusive).
      * @param  high  high end of range to sort (inclusive).
@@ -184,7 +184,7 @@ public class Introsort {
 
     /**
      * A simple insertion sort that operates on the given range.
-     * 
+     *
      * @param  <T>   type of comparable to be sorted.
      * @param  low   low end of range to heapify (inclusive).
      * @param  high  high end of range to sort (inclusive).
