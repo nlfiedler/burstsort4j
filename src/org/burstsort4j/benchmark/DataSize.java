@@ -56,21 +56,56 @@ public enum DataSize {
             return 800;
         }
     },
-    SMALL {
+    N_1000 {
 
         @Override
         public int getValue() {
-            return 333000;
+            return 1000;
         }
     },
-    MEDIUM {
+    N_4000 {
 
         @Override
         public int getValue() {
-            return 1000000;
+            return 4000;
         }
     },
-    LARGE {
+    N_16000 {
+
+        @Override
+        public int getValue() {
+            return 16000;
+        }
+    },
+    N_64000 {
+
+        @Override
+        public int getValue() {
+            return 64000;
+        }
+    },
+    N_256000 {
+
+        @Override
+        public int getValue() {
+            return 256000;
+        }
+    },
+    N_512000 {
+
+        @Override
+        public int getValue() {
+            return 512000;
+        }
+    },
+    N_1024000 {
+
+        @Override
+        public int getValue() {
+            return 1024000;
+        }
+    },
+    N_3000000 {
 
         @Override
         public int getValue() {

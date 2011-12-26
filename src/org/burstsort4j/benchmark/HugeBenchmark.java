@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *
  * @author Nathan Fiedler
  */
-public class Benchmark {
+public class HugeBenchmark {
 
     /** Number of times each sort implementation is run for each data set. */
     private static final int RUN_COUNT = 5;
@@ -25,7 +25,7 @@ public class Benchmark {
     /**
      * Creates a new instance of Benchmark.
      */
-    private Benchmark() {
+    private HugeBenchmark() {
     }
 
     /**
@@ -67,9 +67,9 @@ public class Benchmark {
             };
         }
         DataSize[] sizes = {
-            DataSize.SMALL,
-            DataSize.MEDIUM,
-            DataSize.LARGE
+            DataSize.N_512000,
+            DataSize.N_1024000,
+            DataSize.N_3000000
         };
         if (args.length > 0) {
             // Parse the command line arguments.
@@ -128,11 +128,11 @@ public class Benchmark {
                         usage("Missing --size argument");
                     }
                     if (args[i].equals("small")) {
-                        sizes = new DataSize[]{DataSize.SMALL};
+                        sizes = new DataSize[]{DataSize.N_512000};
                     } else if (args[i].equals("medium")) {
-                        sizes = new DataSize[]{DataSize.MEDIUM};
+                        sizes = new DataSize[]{DataSize.N_1024000};
                     } else if (args[i].equals("large")) {
-                        sizes = new DataSize[]{DataSize.LARGE};
+                        sizes = new DataSize[]{DataSize.N_3000000};
                     } else {
                         usage("Unrecognized --size argument");
                     }
@@ -187,8 +187,8 @@ public class Benchmark {
         System.out.println("\t--list");
         System.out.println("\t\tDisplay a list of the supported data sets and sorting algorithms.");
         System.out.println("\t--size <size>");
-        System.out.println("\t\tIf given 'small', uses 333,000 inputs from data set.");
-        System.out.println("\t\tIf given 'medium', uses 1,000,000 inputs from data set.");
+        System.out.println("\t\tIf given 'small', uses 512,000 inputs from data set.");
+        System.out.println("\t\tIf given 'medium', uses 1,024,000 inputs from data set.");
         System.out.println("\t\tIf given 'large', uses 3,000,000 inputs from data set.");
         System.out.println("\t--sort <regex>");
         System.out.println("\t\tSelect the sort algorithms whose name matches the regular");
@@ -212,9 +212,9 @@ public class Benchmark {
 
         // Warm up the JVM so that the code (hopefully) gets compiled.
         System.out.println("Warming up the system, please wait...");
-        String[] input = new String[DataSize.SMALL.getValue()];
+        String[] input = new String[DataSize.N_512000.getValue()];
         for (DataGenerator generator : generators) {
-            String[] dataSet = generator.generate(DataSize.SMALL);
+            String[] dataSet = generator.generate(DataSize.N_512000);
             for (SortRunner runner : runners) {
                 System.arraycopy(dataSet, 0, input, 0, input.length);
                 runner.sort(input);
