@@ -34,6 +34,9 @@ public class LazyFunnelsort {
     // Tried threshold of 200 and 800 and no noticeable difference.
     //
 
+    private LazyFunnelsort() {
+    }
+
     /**
      * Sorts the set of Comparables using the "lazy" funnelsort algorithm
      * as described by Brodal, Fagerberg, and Vinther.
@@ -167,7 +170,7 @@ public class LazyFunnelsort {
          * @param  offset  first position within array to be sorted.
          * @param  count   number of elements from offset to be sorted.
          */
-        public SortJob(Comparable[] inputs, int offset, int count) {
+        SortJob(Comparable[] inputs, int offset, int count) {
             this.inputs = inputs;
             this.offset = offset;
             this.count = count;
@@ -196,6 +199,9 @@ public class LazyFunnelsort {
      * MergerFactory creates instances of Kmerger based on the given inputs.
      */
     static class MergerFactory {
+
+        private MergerFactory() {
+        }
 
         /**
          * Creates a new instance of Kmerger to merge the input buffers.
@@ -250,7 +256,7 @@ public class LazyFunnelsort {
          *                 from the {@code offset} position.
          * @param  output  buffer to which merged results are written.
          */
-        public BufferMerger(List<CircularBuffer<Comparable>> inputs,
+        BufferMerger(List<CircularBuffer<Comparable>> inputs,
                 int offset, int count, CircularBuffer<Comparable> output) {
             this.output = output;
             output.addObserver(this);
@@ -326,7 +332,7 @@ public class LazyFunnelsort {
          * @param  buffers  the list of input buffers.
          * @param  output   the output buffer.
          */
-        public InsertionMerger(CircularBuffer[] buffers,
+        InsertionMerger(CircularBuffer[] buffers,
                 CircularBuffer<Comparable> output) {
             // Convert the list to an array for fast access and compaction.
             bufferCount = buffers.length;
