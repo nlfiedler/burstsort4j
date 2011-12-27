@@ -46,6 +46,7 @@ public class MacroBenchmark {
             SortRunner.HEAP,
             SortRunner.INTRO,
             SortRunner.QUICK,
+            SortRunner.QUICK_2_PIVOT,
             SortRunner.MULTIKEY
         };
         // use data sizes larger than micro but not huge

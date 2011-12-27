@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import org.burstsort4j.Quicksort;
+import org.burstsort4j.DualPivotQuicksort;
 
 /**
  * Creates a set of data to be sorted.
@@ -234,7 +234,7 @@ public enum DataGenerator {
             // Generate a random data set and then sort it so we can
             // pluck values from it to generate our killer data set.
             String[] data = PSEUDO_WORD.generate(size);
-            Quicksort.sort(data);
+            DualPivotQuicksort.sort(data);
             final int k = data.length / 2;
             String[] list = new String[data.length];
             for (int ii = 1; ii <= k; ii++) {

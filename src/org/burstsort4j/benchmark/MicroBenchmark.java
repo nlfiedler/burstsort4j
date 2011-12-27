@@ -50,6 +50,7 @@ public class MicroBenchmark {
             SortRunner.HEAP,
             SortRunner.INTRO,
             SortRunner.QUICK,
+            SortRunner.QUICK_2_PIVOT,
             SortRunner.SELECTION,
             SortRunner.SHELL
         };

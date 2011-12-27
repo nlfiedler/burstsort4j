@@ -9,6 +9,7 @@ import java.util.Arrays;
 import org.burstsort4j.BinaryInsertionsort;
 import org.burstsort4j.Burstsort;
 import org.burstsort4j.Combsort;
+import org.burstsort4j.DualPivotQuicksort;
 import org.burstsort4j.Gnomesort;
 import org.burstsort4j.Heapsort;
 import org.burstsort4j.HybridCombsort;
@@ -122,6 +123,18 @@ public enum SortRunner {
         @Override
         public void sort(String[] data) {
             Quicksort.sort(data);
+        }
+    },
+    QUICK_2_PIVOT {
+
+        @Override
+        public String getDisplayName() {
+            return "2PivotQk";
+        }
+
+        @Override
+        public void sort(String[] data) {
+            DualPivotQuicksort.sort(data);
         }
     },
     SELECTION {
