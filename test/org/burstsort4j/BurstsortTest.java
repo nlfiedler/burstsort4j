@@ -32,6 +32,16 @@ public class BurstsortTest {
         arr = new String[]{"c", "b", "a"};
         Burstsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        Burstsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        Burstsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test

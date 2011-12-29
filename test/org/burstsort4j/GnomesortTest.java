@@ -37,6 +37,16 @@ public class GnomesortTest {
         arr = new String[]{"c", "b", "a"};
         Gnomesort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        Gnomesort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        Gnomesort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test
@@ -81,7 +91,6 @@ public class GnomesortTest {
 
     @Test
     public void testRepeated() {
-        // Make the size of the set large enough to burst buckets.
         String[] arr = new String[MAX_LINES];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                 + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -99,7 +108,7 @@ public class GnomesortTest {
             strs[i] = seed.substring(0, l);
         }
         List<String> list = new ArrayList<String>();
-        for (int c = 10000, i = 0; c > 0; i++, c--) {
+        for (int c = MAX_LINES, i = 0; c > 0; i++, c--) {
             list.add(strs[i % strs.length]);
         }
         String[] arr = list.toArray(new String[list.size()]);

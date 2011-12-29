@@ -32,6 +32,16 @@ public class HybridCombsortTest {
         arr = new String[]{"c", "b", "a"};
         HybridCombsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        HybridCombsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        HybridCombsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test
@@ -76,7 +86,6 @@ public class HybridCombsortTest {
 
     @Test
     public void testRepeated() {
-        // Make the size of the set large enough to burst buckets.
         String[] arr = new String[10000];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                 + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";

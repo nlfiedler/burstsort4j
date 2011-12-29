@@ -36,6 +36,16 @@ public class BinaryInsertionsortTest {
         arr = new String[]{"c", "b", "a"};
         BinaryInsertionsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        BinaryInsertionsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        BinaryInsertionsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test

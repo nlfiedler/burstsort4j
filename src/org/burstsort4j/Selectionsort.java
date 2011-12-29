@@ -21,8 +21,21 @@ public class Selectionsort {
      *
      * @param  <T>    type of comparable to be sorted.
      * @param  input  array of comparable objects to be sorted.
+     */
+    public static <T extends Comparable<? super T>> void sort(T[] input) {
+        if (input != null && input.length > 1) {
+            sort(input, 0, input.length - 1);
+        }
+    }
+
+    /**
+     * Sort the input array using the selection sort algorithm.
+     * O(n^2) running time.
+     *
+     * @param  <T>    type of comparable to be sorted.
+     * @param  input  array of comparable objects to be sorted.
      * @param  low    low end of range to sort.
-     * @param  high   high end of range to sort.
+     * @param  high   high end of range to sort (inclusive).
      */
     public static <T extends Comparable<? super T>> void sort(T[] input,
             int low, int high) {

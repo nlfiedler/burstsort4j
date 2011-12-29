@@ -32,6 +32,16 @@ public class IntrosortTest {
         arr = new String[]{"c", "b", "a"};
         Introsort.sort(arr);
         assertTrue(Tests.isSorted(arr));
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        Introsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        Introsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test
@@ -76,7 +86,6 @@ public class IntrosortTest {
 
     @Test
     public void testRepeated() {
-        // Make the size of the set large enough to burst buckets.
         String[] arr = new String[10000];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                 + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";

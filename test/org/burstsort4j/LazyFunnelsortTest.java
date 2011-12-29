@@ -168,6 +168,16 @@ public class LazyFunnelsortTest {
         assertEquals("h", arr[7]);
         assertEquals("i", arr[8]);
         assertEquals("j", arr[9]);
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        LazyFunnelsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        LazyFunnelsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
     @Test
@@ -243,7 +253,6 @@ public class LazyFunnelsortTest {
 
     @Test
     public void testRepeated() {
-        // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                 + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";

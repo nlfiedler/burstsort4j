@@ -54,6 +54,16 @@ public class FunnelsortTest {
         assertEquals("h", arr[7]);
         assertEquals("i", arr[8]);
         assertEquals("j", arr[9]);
+        // test with all empty input
+        arr = new String[]{"", "", "", "", "", "", "", "", "", ""};
+        Funnelsort.sort(arr);
+        for (String s : arr) {
+            assertEquals("", s);
+        }
+        // test with peculiar input
+        arr = new String[]{"z", "m", "", "a", "d", "tt", "tt", "tt", "foo", "bar"};
+        Funnelsort.sort(arr);
+        assertTrue("peculiar input not sorted", Tests.isSorted(arr));
     }
 
 //    @Test
@@ -141,7 +151,6 @@ public class FunnelsortTest {
 
 //    @Test
     public void testRepeated() {
-        // Make the size of the set large enough to burst buckets.
         String[] arr = new String[1310720];
         final String STR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                 + "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
