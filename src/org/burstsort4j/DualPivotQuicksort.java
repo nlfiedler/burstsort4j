@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Nathan Fiedler. All rights reserved.
+ * Copyright 2011-2012 Nathan Fiedler. All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the LICENSE file.
  */
@@ -20,7 +20,6 @@ public class DualPivotQuicksort {
      * Sorts the given array of comparable objects using the dual-pivot
      * quicksort algorithm.
      *
-     * @param  <T>  type of comparable to be sorted.
      * @param  arr  an array of Comparable items to sort.
      */
     public static void sort(String[] arr) {

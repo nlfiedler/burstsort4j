@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Nathan Fiedler. All rights reserved.
+ * Copyright 2008-2012 Nathan Fiedler. All rights reserved.
  * Use of this source code is governed by a BSD-style
  * license that can be found in the LICENSE file.
  */
@@ -45,9 +45,9 @@ public class Main {
         if (args.length < 2 || args.length > 3) {
             usage();
         }
-        String input = null;
-        String output = null;
-        String sort = null;
+        String input;
+        String output;
+        String sort;
         if (args.length == 3) {
             sort = args[0];
             input = args[1];
@@ -112,7 +112,7 @@ public class Main {
     private static String[] readFile(String name) {
         List<String> data = new ArrayList<String>();
         try {
-            Reader fr = null;
+            Reader fr;
             if (name.toLowerCase().endsWith(".gz")) {
               FileInputStream fis = new FileInputStream(name);
               GZIPInputStream gis = new GZIPInputStream(fis);
@@ -141,7 +141,7 @@ public class Main {
      */
     private static void writeFile(String name, String[] data) {
         try {
-            Writer fw = null;
+            Writer fw;
             if (name.toLowerCase().endsWith(".gz")) {
               FileOutputStream fos = new FileOutputStream(name);
               GZIPOutputStream gos = new GZIPOutputStream(fos);
