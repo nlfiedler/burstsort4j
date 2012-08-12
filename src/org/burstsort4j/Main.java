@@ -13,6 +13,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.Reader;
+import java.io.Writer;
+
 /**
  * Command-line interface to the various sort implementations.
  *
@@ -82,7 +91,8 @@ public class Main {
     private static void usage() {
         System.out.println("Usage: Main [options] <input> <output>\n");
         System.out.println("\t<input> is the name of the (unsorted) input file.");
-        System.out.println("\t<output> is the name for the (sorted) output file.\n");
+        System.out.println("\t<output> is the name for the (sorted) output file.");
+        System.out.println("\tGzip compression will be used on any file having a \".gz\" suffix\n");
         System.out.println("\t--burstsort");
         System.out.println("\t\tSort using the original Burstsort algorithm.");
         System.out.println("\t\tThis is the default sort if none is specified.\n");
@@ -102,7 +112,14 @@ public class Main {
     private static String[] readFile(String name) {
         List<String> data = new ArrayList<String>();
         try {
-            FileReader fr = new FileReader(name);
+            Reader fr = null;
+            if (name.toLowerCase().endsWith(".gz")) {
+              FileInputStream fis = new FileInputStream(name);
+              GZIPInputStream gis = new GZIPInputStream(fis);
+              fr = new InputStreamReader(gis);
+            } else {
+              fr = new FileReader(name);
+            }
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (line != null) {
@@ -124,7 +141,14 @@ public class Main {
      */
     private static void writeFile(String name, String[] data) {
         try {
-            FileWriter fw = new FileWriter(name);
+            Writer fw = null;
+            if (name.toLowerCase().endsWith(".gz")) {
+              FileOutputStream fos = new FileOutputStream(name);
+              GZIPOutputStream gos = new GZIPOutputStream(fos);
+              fw = new OutputStreamWriter(gos);
+            } else {
+              fw = new FileWriter(name);
+            }
             BufferedWriter bw = new BufferedWriter(fw);
             for (String output : data) {
                 bw.write(output);
